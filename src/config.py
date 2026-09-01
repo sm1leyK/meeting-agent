@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 #加在 .env文件
 BASE_DIR = Path(__file__).resolve().parent.parent
 env_path = BASE_DIR / '.env'
-print(BASE_DIR,env_path)
 load_dotenv(dotenv_path=env_path)
 
 class Config:

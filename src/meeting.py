@@ -1,5 +1,6 @@
 from .llm import call_llm
 from pathlib import Path
+import os
 
 ##读取文本
 def load_txt(path: str) -> str:
@@ -48,15 +49,21 @@ def build_user_prompt(
 
 ##调用llm
 def summarize_meeting(
-    user_prompt_path = Path(__file__).parent.parent / 'data' / 'meeting.txt',
+    user_instruction_path: Path | None = None,
+    meeting_txt_path = Path(__file__).parent.parent / 'data' / 'meeting.txt',
     system_prompt_path = Path(__file__).parent.parent / 'prompts' / 'system_prompt.txt'
                       ) -> str:
     system_prompt = load_txt(system_prompt_path)
-    user_txt = load_txt(user_prompt_path)
-    user_prompt = build_user_prompt(user_txt)
+    meeting_txt = load_txt(meeting_txt_path)
+    if user_instruction_path and user_instruction_path.exists():
+        user_instruction = load_txt(user_instruction_path)
+        user_prompt = build_user_prompt(meeting_txt,user_instruction)
+    else:
+        user_prompt = build_user_prompt(meeting_txt)
+    
     result = call_llm(system_prompt,user_prompt)
     return result
-    
+
 ##保存结果
 def save_result(result: str,
                 output_path = Path(__file__).parent.parent / 'outputs' / 'test_result.md'

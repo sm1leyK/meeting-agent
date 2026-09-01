@@ -4,6 +4,11 @@ from openai import OpenAI
 def call_llm(system_prompt: str, user_prompt: str) -> str:
     ##设置client
     config = Config()
+    try:
+        config.validate()
+    except ValueError as e:
+        print(e)
+        exit()
     client = OpenAI(
     api_key=config.DEEPSEEK_API_KEY,
     base_url='https://api.deepseek.com'

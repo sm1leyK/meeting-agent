@@ -214,7 +214,7 @@ python app.py
 
 ## Roadmap
 
-### v0.1 — Basic Meeting Summarization ✅
+### v0.1 — Basic Meeting Summarization 
 
 完成基础会议总结流程：
 
@@ -242,11 +242,11 @@ save_result()
 
 ---
 
-### v0.2 — Long Meeting Processing 🚧
+### v0.2 — Long Meeting Processing 
 
 目标：支持较长的会议转录文本，并逐步解决上下文长度限制与会议语义连续性问题。
 
-#### v0.2.1 — Transcript Parsing ✅
+#### v0.2.1 — Transcript Parsing 
 
 将原始会议转录文本解析为统一的结构化格式。
 
@@ -288,7 +288,7 @@ Structured Messages
 
 ---
 
-#### v0.2.2 — Speaker-aware Chunking ✅
+#### v0.2.2 — Speaker-aware Chunking 
 
 在不拆断单条发言的前提下，将结构化会议记录划分为多个 chunk。
 
@@ -319,7 +319,7 @@ Formatted Chunk Text
 
 ---
 
-#### v0.2.3 — Token-aware Chunking 🚧
+#### v0.2.3 — Token-aware Chunking 
 
 将字符长度控制升级为基于模型 Token 的长度控制。
 
@@ -386,7 +386,7 @@ available_chunk_tokens
 
 ---
 
-#### v0.2.4 — Map-Reduce Meeting Summarization 🚧
+#### v0.2.4 — Map-Reduce Meeting Summarization 
 
 针对多个会议 chunk 分阶段完成总结。
 

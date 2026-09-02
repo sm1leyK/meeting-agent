@@ -1,6 +1,7 @@
 from .llm import call_llm
 from pathlib import Path
 import os
+from .text_splitter import format_chunk
 
 ##读取文本
 def load_txt(path: str) -> str:
@@ -74,3 +75,24 @@ def save_result(result: str,
         print(f'输出结果保存成功。 位置：{output_path}')
     except FileNotFoundError as e:
         raise FileNotFoundError(f'file not found: {e}')
+    
+##构造局部prompt
+def summarize_chunk(chunk_text: str,chunk_prompt_path: Path) -> str:
+    
+    chunk_prompt = load_txt(chunk_prompt_path)
+    summary = call_llm(chunk_prompt,chunk_text)
+    return summary
+
+##总结局部prompt
+def summarize_chunks(chunks: list[list[dict]]
+                     ,chunk_prompt_path: Path
+                     ) -> list:
+    summaries = []
+    
+    for chunk in chunks:
+        chunk_text = format_chunk(chunk)
+        summary = summarize_chunk(chunk_text,chunk_prompt_path)
+        summaries.append(summary)
+    
+    return summaries
+

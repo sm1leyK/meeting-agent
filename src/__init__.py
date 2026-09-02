@@ -1,1 +1,1 @@
-from .meeting import summarize_meeting,save_result
+from .meeting import summarize_meeting,save_result,summarize_chunks

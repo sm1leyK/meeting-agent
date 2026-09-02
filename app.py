@@ -1,9 +1,10 @@
-from src import summarize_meeting,save_result
+from src import summarize_meeting,save_result,summarize_chunks
+from pathlib import Path
 
 def main() -> None:
-   result = summarize_meeting()
-   save_result(result)
-   print(result)
+   chunks = [[{'speaker': '安九鑫', 'timestamp': '00:00:01', 'content': "Ok, it's turn to another one. 马云，马雲峰 Are you? Are you there? ok 然后他发消息的时候他不方便 ok ok。ok 胡木阳鲁迅是吗？对 Ok. please turn to you 红木羊 You can introduce yourself. 他说我也不太方便 ok ok，就是他们都可以听，但是可能不是太方便说话 ok 好 ok。"}], [{'speaker': '陈杰', 'timestamp': '00:00:46', 'content': 'Ok, I think the final one the the new income comer. Alex, well, do you want to introduceyourself? '}], [{'speaker': '卡米诺', 'timestamp': '00:00:54', 'content': "Yeah, I, I guess I can present myself to you so hello everyone, I'm Alex, I am a master student from E. P. F. Paris and Tian University in Biomedical Engineering with a speciality specialization in intelligence, artificial intelligence, and machine learning. "}], [{'speaker': '卡米诺', 'timestamp': '00:01:11', 'content': "That's me. "}], [{'speaker': '陈杰', 'timestamp': '00:01:14', 'content': "Yeah, so let let me briefly close the introduction. So this is an research collaboration between Sun University andBiji, which. From our grant proposal, I think almost four years ago, and we have a close in a collaboration with Drxiao and yeah, so I think today we're going to. "}], [{'speaker': '陈杰', 'timestamp': '00:01:50', 'content': 'Give somebackground introduction about this project and later I think Alex and Adio probably can find some point to to to to to start with. And I think Alex later will also join Vg Ias intern and I think Dr. Ciao will be your supervisor. I it well but but by the way did did. Did any Bg staff have contacted you about the internship stuff? '}], [{'speaker': '卡米诺', 'timestamp': '00:02:29', 'content': "Yes, the contact me on Monday and I send them the matter you the same day. Now I'm just awaiting the reply. Just waiting. "}], [{'speaker': '陈杰', 'timestamp': '00:02:36', 'content': 'Ok, Ok, yeah, so do Doctor Shaw may do you? Do you want to say something? '}], [{'speaker': '安九鑫', 'timestamp': '00:02:45','content': 'Well, yeah, so like Dr. Chen just mentioned, we have been collaborating for for years. I actually this this year is a 5th last year right of our. project our grant。So after this year, we we may not have any ground. so。'}], [{'speaker': '陈杰', 'timestamp': '00:03:01', 'content': 'Yeah, the grant. '}]]
+   summaries = summarize_chunks(chunks,chunk_prompt_path=Path(__file__).parent/'prompts'/'chunk_prompt.txt')
+   print(summaries)
    
 if __name__ == '__main__':
     main() 

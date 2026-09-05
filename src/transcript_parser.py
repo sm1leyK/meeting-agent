@@ -15,6 +15,7 @@ def parse_transcript(text: str) -> list:
             message['timestamp'] = match.group(2)
             message['content'] = match.group(3)
             messages.append(message)
+        ##不match的内容还没考虑
     return messages    
     
     

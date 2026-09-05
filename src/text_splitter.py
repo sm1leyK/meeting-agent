@@ -1,4 +1,4 @@
-from token_utils import count_tokens
+from .token_utils import count_tokens
 
 ##chunk messages
 def chunk_messages(messages: list[dict],
@@ -10,6 +10,7 @@ def chunk_messages(messages: list[dict],
     for message in messages:
         formatted_message = f"{message['speaker']}({message['timestamp']}): {message['content']}\n"
         message_token_count = count_tokens(formatted_message)
+        
         if chunk_token_count + message_token_count <= max_tokens:
             chunk_token_count += message_token_count
             chunk.append(message)
@@ -27,6 +28,5 @@ def format_chunk(chunk: list[dict]) -> str:
     formatted_messages = []
     for message in chunk:
         formatted_message = f"{message['speaker']}({message['timestamp']}): {message['content']}\n"
-        print(count_tokens(formatted_message))
         formatted_messages.append(formatted_message)
     return ''.join(formatted_messages)

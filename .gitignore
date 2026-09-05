@@ -43,3 +43,7 @@ outputs/*
 
 # macOS
 .DS_Store
+
+#tokenizer
+tokenizer/tokenizer.json
+tokenizer/tokenizer_config.json

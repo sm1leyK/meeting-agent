@@ -1,16 +1,13 @@
 from .llm import call_llm
 from pathlib import Path
 import os
-from .text_splitter import format_chunk
+from .text_splitter import format_chunk,chunk_messages
+from .io_utils import load_txt,save_result
+from .token_utils import count_tokens,calculate_token_budget
+from .transcript_parser import parse_transcript
 
-##读取文本
-def load_txt(path: str) -> str:
-    try:
-        with open(path,'r') as file:
-            txt = file.read()
-        return txt
-    except FileNotFoundError as e:
-        raise FileNotFoundError(f'file not found: {e}')
+
+
 ##读取并生成用户提示词
 def build_user_prompt(
     meeting_txt: str,
@@ -65,34 +62,84 @@ def summarize_meeting(
     result = call_llm(system_prompt,user_prompt)
     return result
 
-##保存结果
-def save_result(result: str,
-                output_path = Path(__file__).parent.parent / 'outputs' / 'test_result.md'
-                ) -> None:
-    try:
-        with open(output_path,'w') as file:
-            file.write(result)
-        print(f'输出结果保存成功。 位置：{output_path}')
-    except FileNotFoundError as e:
-        raise FileNotFoundError(f'file not found: {e}')
-    
 ##构造局部prompt
-def summarize_chunk(chunk_text: str,chunk_prompt_path: Path) -> str:
+def summarize_chunk(
+    chunk_text: str,
+    chunk_prompt_path: Path,
+    system_prompt_path: Path
+    ) -> str:
     
     chunk_prompt = load_txt(chunk_prompt_path)
-    summary = call_llm(chunk_prompt,chunk_text)
+    system_prompt = load_txt(system_prompt_path)
+    user_prompt = f'''
+{chunk_prompt}
+    
+[当前会议片段]
+    
+{chunk_text}
+'''
+    summary = call_llm(system_prompt,user_prompt)
     return summary
 
 ##总结局部prompt
-def summarize_chunks(chunks: list[list[dict]]
-                     ,chunk_prompt_path: Path
-                     ) -> list:
+def summarize_chunks(
+    chunks: list[list[dict]],
+    chunk_prompt_path: Path,
+    system_prompt_path: Path
+    ) -> list[str]:
     summaries = []
     
     for chunk in chunks:
         chunk_text = format_chunk(chunk)
-        summary = summarize_chunk(chunk_text,chunk_prompt_path)
+        summary = summarize_chunk(chunk_text,chunk_prompt_path,system_prompt_path)
         summaries.append(summary)
     
     return summaries
 
+##准备 chunk budget
+def prepare_chunk_budget(
+    system_prompt_path: Path = Path(__file__).parent.parent / 'prompts' / 'system_prompt.txt',
+    chunk_prompt_path: Path = Path(__file__).parent.parent / 'prompts' / 'chunk_prompt.txt',
+    context_limit: int = 1000000,
+    reserved_output_tokens: int = 4000,
+    safety_margin: int = 1000,
+    preferred_chunk_limit: int = 8000
+    ) -> int:
+    ##计算system和chunk prompt
+    system_prompt_tokens = count_tokens(load_txt(system_prompt_path))
+    chunk_prompt_tokens = count_tokens(load_txt(chunk_prompt_path))
+    fixed_prompt_tokens = system_prompt_tokens + chunk_prompt_tokens
+    effective_chunk_limit = calculate_token_budget(fixed_prompt_tokens,context_limit,reserved_output_tokens,safety_margin,preferred_chunk_limit)
+    return effective_chunk_limit
+
+##调度
+def summarize_long_meeting(
+    meeting_txt_path = Path(__file__).parent.parent / 'data' / 'meeting.txt',
+    system_prompt_path: Path = Path(__file__).parent.parent / 'prompts' / 'system_prompt.txt',
+    chunk_prompt_path: Path = Path(__file__).parent.parent / 'prompts' / 'chunk_prompt.txt',
+    context_limit: int = 1000000,
+    reserved_output_tokens: int = 4000,
+    safety_margin: int = 1000,
+    preferred_chunk_limit: int = 8000
+) -> list[str]:
+    ##获取会议内容+格式化
+    meeting_txt = load_txt(meeting_txt_path)
+    messages = parse_transcript(meeting_txt)
+    
+    ##获取token限制
+    effective_chunk_limit = prepare_chunk_budget(
+        system_prompt_path=system_prompt_path,
+        chunk_prompt_path=chunk_prompt_path,
+        context_limit=context_limit,
+        reserved_output_tokens=reserved_output_tokens,
+        safety_margin=safety_margin,
+        preferred_chunk_limit=preferred_chunk_limit
+        )
+    
+    ##获取chunks
+    chunks = chunk_messages(messages=messages,max_tokens=effective_chunk_limit)
+    ##获取summaries
+    #summaries = summarize_chunks(chunks=chunks,chunk_prompt_path=chunk_prompt_path,system_prompt_path=system_prompt_path)
+    #return summaries
+    
+    ##test

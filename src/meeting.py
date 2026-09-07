@@ -112,8 +112,98 @@ def prepare_chunk_budget(
     effective_chunk_limit = calculate_token_budget(fixed_prompt_tokens,context_limit,reserved_output_tokens,safety_margin,preferred_chunk_limit)
     return effective_chunk_limit
 
+##merge summaries
+def merge_summaries(
+    summaries: list[str],
+    merge_prompt_path = Path(__file__).parent.parent / 'prompts' / 'merge_prompt.txt',
+    system_prompt_path: Path = Path(__file__).parent.parent / 'prompts' / 'system_prompt.txt',
+    user_instruction_path: Path | None = None,
+    ) -> str:
+    
+    system_prompt = load_txt(system_prompt_path)
+    merge_prompt = load_txt(merge_prompt_path)
+    user_instruction =load_txt(user_instruction_path)
+    summaries_txt = ''
+    
+    for sum_num, summary in enumerate(summaries,start=1):
+        summaries_txt += f'[摘要{sum_num}]: {summary}\n'
+    
+    user_prompt = f'''
+    [合并任务]
+    {merge_prompt}
+    
+    [用户最终任务]
+    {user_instruction}
+    
+    [局部会议摘要]
+    {summaries_txt}    
+    '''
+    result = call_llm(system_prompt,user_prompt)
+    return result
+
+
+
+def merge_summaries_iteratively(
+    summaries: list[str],
+    merge_prompt_path = Path(__file__).parent.parent / 'prompts' / 'merge_prompt.txt',
+    system_prompt_path: Path = Path(__file__).parent.parent / 'prompts' / 'system_prompt.txt',
+    user_instruction_path: Path | None = None,
+) -> str:
+    max_tokens = prepare_chunk_budget(
+        chunk_prompt_path=merge_prompt_path,
+        )
+    cur_summaries = summaries
+    cur_tokens = 0
+    merged_summaries = []
+    summary_chunk = []
+    for cur_summary in cur_summaries:
+        summary_token = count_tokens(cur_summary)
+        if summary_token > max_tokens:
+            raise ValueError("Single summary exceeds max_tokens")
+        if cur_tokens + summary_token <= max_tokens:
+            cur_tokens += summary_token
+            summary_chunk.append(cur_summary)
+        else:
+            if summary_chunk:
+                if len(summary_chunk) == 1:
+                    merged_summaries.append(summary_chunk[0]) 
+                else:
+                    merged_summary = merge_summaries(
+                        summary_chunk,
+                        merge_prompt_path=merge_prompt_path,
+                        system_prompt_path=system_prompt_path,
+                        user_instruction_path=user_instruction_path
+                        )
+                    merged_summaries.append(merged_summary)
+                    
+            cur_tokens = summary_token
+            summary_chunk = [cur_summary]
+    if summary_chunk:
+        if len(summary_chunk) == 1:
+            merged_summaries.append(summary_chunk[0])
+        else:
+            merged_summary = merge_summaries(
+                        summary_chunk,
+                        merge_prompt_path=merge_prompt_path,
+                        system_prompt_path=system_prompt_path,
+                        user_instruction_path=user_instruction_path
+                        )
+            merged_summaries.append(merged_summary)
+    
+    if len(merged_summaries) == 1:
+        return merged_summaries[0]
+    else:
+        return merge_summaries_iteratively(
+            summaries=merged_summaries,
+            merge_prompt_path=merge_prompt_path,
+            system_prompt_path=system_prompt_path,
+            user_instruction_path=user_instruction_path
+            )
+
 ##调度
 def summarize_long_meeting(
+    user_instruction_path: Path | None = None,
+    merge_prompt_path = Path(__file__).parent.parent / 'prompts' / 'merge_prompt.txt',
     meeting_txt_path = Path(__file__).parent.parent / 'data' / 'meeting.txt',
     system_prompt_path: Path = Path(__file__).parent.parent / 'prompts' / 'system_prompt.txt',
     chunk_prompt_path: Path = Path(__file__).parent.parent / 'prompts' / 'chunk_prompt.txt',
@@ -139,7 +229,12 @@ def summarize_long_meeting(
     ##获取chunks
     chunks = chunk_messages(messages=messages,max_tokens=effective_chunk_limit)
     ##获取summaries
-    #summaries = summarize_chunks(chunks=chunks,chunk_prompt_path=chunk_prompt_path,system_prompt_path=system_prompt_path)
-    #return summaries
-    
-    ##test
+    summaries = summarize_chunks(chunks=chunks,chunk_prompt_path=chunk_prompt_path,system_prompt_path=system_prompt_path)
+    ##merge summaries
+    result = merge_summaries_iteratively(
+        summaries=summaries,
+        merge_prompt_path=merge_prompt_path,
+        system_prompt_path=system_prompt_path,
+        user_instruction_path=user_instruction_path
+        )
+    return result

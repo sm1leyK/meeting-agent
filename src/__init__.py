@@ -1,2 +1,2 @@
-from .meeting import summarize_long_meeting
+from .meeting import summarize_long_meeting,merge_summaries_iteratively
 from .io_utils import save_result

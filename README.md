@@ -797,18 +797,18 @@ chunk_prompt
 chunk_text
 ```
 
-#### Reduce 🚧
+#### Reduce 
 
 计划：
 
-* [ ] 实现 `merge_summaries()`
-* [ ] 设计独立 `merge_prompt`
-* [ ] 合并多个局部摘要
-* [ ] 去除重复信息
-* [ ] 保留跨 Chunk 的讨论关系
-* [ ] 避免局部信息在合并过程中失真
-* [ ] 重新应用用户最终 `user_instruction`
-* [ ] 生成最终会议纪要
+* [x] 实现 `merge_summaries()`
+* [x] 设计独立 `merge_prompt`
+* [x] 合并多个局部摘要
+* [x] 去除重复信息
+* [x] 保留跨 Chunk 的讨论关系
+* [x] 避免局部信息在合并过程中失真
+* [x] 重新应用用户最终 `user_instruction`
+* [x] 生成最终会议纪要
 
 完整目标流程：
 

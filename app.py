@@ -1,4 +1,4 @@
-from src import save_result,summarize_long_meeting
+from src import save_result,summarize_long_meeting,merge_summaries_iteratively
 from pathlib import Path
 
 def main() -> None:
@@ -6,7 +6,7 @@ def main() -> None:
       meeting_txt_path='data/test.txt',
       system_prompt_path='prompts/system_prompt.txt',
       chunk_prompt_path='prompts/chunk_prompt.txt'
-      )
+   )
    print(result)
    
    

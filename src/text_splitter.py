@@ -7,10 +7,11 @@ def chunk_messages(messages: list[dict],
     chunks = []
     chunk = []
     chunk_token_count = 0
+    spent_tokens = 0
     for message in messages:
         formatted_message = f"{message['speaker']}({message['timestamp']}): {message['content']}\n"
         message_token_count = count_tokens(formatted_message)
-        
+        spent_tokens += count_tokens(formatted_message)
         if chunk_token_count + message_token_count <= max_tokens:
             chunk_token_count += message_token_count
             chunk.append(message)

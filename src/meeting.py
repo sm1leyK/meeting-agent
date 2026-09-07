@@ -97,7 +97,7 @@ def summarize_chunks(
     return summaries
 
 ##准备 chunk budget
-def prepare_chunk_budget(
+def prepare_context_budget(
     system_prompt_path: Path = Path(__file__).parent.parent / 'prompts' / 'system_prompt.txt',
     chunk_prompt_path: Path = Path(__file__).parent.parent / 'prompts' / 'chunk_prompt.txt',
     context_limit: int = 1000000,
@@ -118,6 +118,7 @@ def merge_summaries(
     merge_prompt_path = Path(__file__).parent.parent / 'prompts' / 'merge_prompt.txt',
     system_prompt_path: Path = Path(__file__).parent.parent / 'prompts' / 'system_prompt.txt',
     user_instruction_path: Path | None = None,
+    is_final: bool = False
     ) -> str:
     
     system_prompt = load_txt(system_prompt_path)
@@ -131,16 +132,26 @@ def merge_summaries(
     for sum_num, summary in enumerate(summaries,start=1):
         summaries_txt += f'[摘要{sum_num}]: {summary}\n'
     
-    user_prompt = f'''
-    [合并任务]
-    {merge_prompt}
+    if is_final:
+        user_prompt = f'''
+[合并任务]
+{merge_prompt}
+            
+[用户最终任务]
+{user_instruction}
+            
+[局部会议摘要]
+{summaries_txt}    
+'''
+    else:
+        user_prompt = f'''
+[合并任务]
+{merge_prompt}
     
-    [用户最终任务]
-    {user_instruction}
-    
-    [局部会议摘要]
-    {summaries_txt}    
-    '''
+[局部会议摘要]
+{summaries_txt}    
+'''
+        
     result = call_llm(system_prompt,user_prompt)
     return result
 
@@ -152,9 +163,24 @@ def merge_summaries_iteratively(
     system_prompt_path: Path = Path(__file__).parent.parent / 'prompts' / 'system_prompt.txt',
     user_instruction_path: Path | None = None,
 ) -> str:
-    max_tokens = prepare_chunk_budget(
+    
+    if not summaries:
+        return ''
+    
+    max_tokens = prepare_context_budget(
         chunk_prompt_path=merge_prompt_path,
         )
+    total_tokens = sum(count_tokens(summary) for summary in summaries)
+    
+    if total_tokens <= max_tokens:
+        return merge_summaries(
+        summaries=summaries,
+        merge_prompt_path=merge_prompt_path,
+        system_prompt_path=system_prompt_path,
+        user_instruction_path=user_instruction_path,
+        is_final=True
+        )
+    
     cur_summaries = summaries
     cur_tokens = 0
     merged_summaries = []
@@ -169,19 +195,14 @@ def merge_summaries_iteratively(
         else:
             if summary_chunk:
                 if len(summary_chunk) == 1:
-                    merged_summary = merge_summaries(
-                                            summary_chunk,
-                                            merge_prompt_path=merge_prompt_path,
-                                            system_prompt_path=system_prompt_path,
-                                            user_instruction_path=user_instruction_path
-                                            )
-                    merged_summaries.append(merged_summary) 
+                    merged_summaries.append(summary_chunk[0]) 
                 else:
                     merged_summary = merge_summaries(
                         summary_chunk,
                         merge_prompt_path=merge_prompt_path,
                         system_prompt_path=system_prompt_path,
-                        user_instruction_path=user_instruction_path
+                        user_instruction_path=user_instruction_path,
+                        is_final = False
                         )
                     merged_summaries.append(merged_summary)
                     
@@ -189,30 +210,22 @@ def merge_summaries_iteratively(
             summary_chunk = [cur_summary]
     if summary_chunk:
         if len(summary_chunk) == 1:
-            merged_summary = merge_summaries(
-                summary_chunk,
-                merge_prompt_path=merge_prompt_path,
-                system_prompt_path=system_prompt_path,
-                user_instruction_path=user_instruction_path
-                )
-            merged_summaries.append(merged_summary)
+            merged_summaries.append(summary_chunk[0]) 
         else:
             merged_summary = merge_summaries(
                         summary_chunk,
                         merge_prompt_path=merge_prompt_path,
                         system_prompt_path=system_prompt_path,
-                        user_instruction_path=user_instruction_path
+                        user_instruction_path=user_instruction_path,
+                        is_final=False
                         )
             merged_summaries.append(merged_summary)
     
-    if len(merged_summaries) == 1:
-        return merged_summaries[0]
-    else:
-        return merge_summaries_iteratively(
+    return merge_summaries_iteratively(
             summaries=merged_summaries,
             merge_prompt_path=merge_prompt_path,
             system_prompt_path=system_prompt_path,
-            user_instruction_path=user_instruction_path
+            user_instruction_path=user_instruction_path,
             )
 
 ##调度
@@ -232,7 +245,7 @@ def summarize_long_meeting(
     messages = parse_transcript(meeting_txt)
     
     ##获取token限制
-    effective_chunk_limit = prepare_chunk_budget(
+    effective_chunk_limit = prepare_context_budget(
         system_prompt_path=system_prompt_path,
         chunk_prompt_path=chunk_prompt_path,
         context_limit=context_limit,

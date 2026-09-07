@@ -122,7 +122,10 @@ def merge_summaries(
     
     system_prompt = load_txt(system_prompt_path)
     merge_prompt = load_txt(merge_prompt_path)
-    user_instruction =load_txt(user_instruction_path)
+    if user_instruction_path:
+        user_instruction = load_txt(user_instruction_path)
+    else:
+        user_instruction = "请生成结构化会议纪要，包含：会议主题、主要讨论、当前问题、明确决定、后续行动。"
     summaries_txt = ''
     
     for sum_num, summary in enumerate(summaries,start=1):
@@ -166,7 +169,13 @@ def merge_summaries_iteratively(
         else:
             if summary_chunk:
                 if len(summary_chunk) == 1:
-                    merged_summaries.append(summary_chunk[0]) 
+                    merged_summary = merge_summaries(
+                                            summary_chunk,
+                                            merge_prompt_path=merge_prompt_path,
+                                            system_prompt_path=system_prompt_path,
+                                            user_instruction_path=user_instruction_path
+                                            )
+                    merged_summaries.append(merged_summary) 
                 else:
                     merged_summary = merge_summaries(
                         summary_chunk,
@@ -180,7 +189,13 @@ def merge_summaries_iteratively(
             summary_chunk = [cur_summary]
     if summary_chunk:
         if len(summary_chunk) == 1:
-            merged_summaries.append(summary_chunk[0])
+            merged_summary = merge_summaries(
+                summary_chunk,
+                merge_prompt_path=merge_prompt_path,
+                system_prompt_path=system_prompt_path,
+                user_instruction_path=user_instruction_path
+                )
+            merged_summaries.append(merged_summary)
         else:
             merged_summary = merge_summaries(
                         summary_chunk,
@@ -211,7 +226,7 @@ def summarize_long_meeting(
     reserved_output_tokens: int = 4000,
     safety_margin: int = 1000,
     preferred_chunk_limit: int = 8000
-) -> list[str]:
+) -> str:
     ##获取会议内容+格式化
     meeting_txt = load_txt(meeting_txt_path)
     messages = parse_transcript(meeting_txt)

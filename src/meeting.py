@@ -5,6 +5,7 @@ from .text_splitter import format_chunk,chunk_messages
 from .io_utils import load_txt,save_result
 from .token_utils import count_tokens,calculate_token_budget
 from .transcript_parser import parse_transcript
+import json
 
 
 
@@ -119,7 +120,7 @@ def merge_summaries(
     system_prompt_path: Path = Path(__file__).parent.parent / 'prompts' / 'system_prompt.txt',
     user_instruction_path: Path | None = None,
     is_final: bool = False
-    ) -> str:
+    ) -> str | dict:
     
     system_prompt = load_txt(system_prompt_path)
     merge_prompt = load_txt(merge_prompt_path)
@@ -139,7 +140,32 @@ def merge_summaries(
             
 [用户最终任务]
 {user_instruction}
-            
+
+[最终输出要求]
+请将最终会议纪要严格输出为合法 JSON，不要输出 Markdown 代码块，不要添加任何 JSON 之外的说明文字。
+
+JSON 结构必须为：
+
+{{
+  "meeting_topic": "",
+  "main_discussions": [],
+  "key_facts": [],
+  "opinions_and_questions": [],
+  "decisions": [],
+  "action_items": []
+}}
+
+要求：
+1. meeting_topic 必须为字符串。
+2. 其余字段必须为字符串数组。
+3. 如果某个类别没有明确内容，返回空数组 []，不要编造内容。
+4. 不得把建议、设想或可能性写成 decisions。
+5. 不得把当前状态、已完成事项或能力描述写成 action_items。
+6. 不明确的负责人、时间、实体名称不得自行补充或纠正。
+7. 必须保证输出可以直接被 Python json.loads() 解析。
+8. 不要输出 ```json 等 Markdown 标记。
+9. 不要描述摘要数量、片段数量、合并过程等内部处理信息。
+
 [局部会议摘要]
 {summaries_txt}    
 '''
@@ -153,6 +179,8 @@ def merge_summaries(
 '''
         
     result = call_llm(system_prompt,user_prompt)
+    if is_final:
+        return json.loads(result)
     return result
 
 def merge_summaries_iteratively(
@@ -169,8 +197,6 @@ def merge_summaries_iteratively(
     if not summaries:
         return ''
     
-    if len(summaries) == 1:
-        return summaries[0]
     
     max_tokens = prepare_context_budget(
         system_prompt_path=system_prompt_path,
@@ -270,7 +296,7 @@ def summarize_long_meeting(
     reserved_output_tokens: int = 4000,
     safety_margin: int = 1000,
     preferred_chunk_limit: int = 8000
-) -> str:
+) -> str | dict:
     ##获取会议内容+格式化
     meeting_txt = load_txt(meeting_txt_path)
     messages = parse_transcript(meeting_txt)

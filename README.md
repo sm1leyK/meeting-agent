@@ -589,7 +589,7 @@ save_result()
 
 ---
 
-## v0.2 — Long Meeting Processing 🚧
+## v0.2 — Long Meeting Processing ✅
 
 目标：支持较长的会议转录文本，并逐步解决上下文长度限制、会议语义连续性与多阶段总结问题。
 
@@ -751,7 +751,7 @@ chunk_messages()
 
 ---
 
-### v0.2.4 — Map-Reduce Meeting Summarization 🚧
+### v0.2.4 — Map-Reduce Meeting Summarization ✅
 
 针对多个会议 Chunk 分阶段完成会议总结。
 

@@ -28,7 +28,7 @@ def call_llm_structured(
 [请重新按要求生成]
 '''
             ##test
-            print('JSON failed, retrying...')
+            ##print('JSON failed, retrying...')
             
             return call_llm_structured(
                 system_prompt=system_prompt,
@@ -52,7 +52,7 @@ def call_llm_structured(
 [请重新按要求生成]
 '''
             ##test
-            print('Validation failed, retrying...')
+            ##print('Validation failed, retrying...')
             return call_llm_structured(
                 system_prompt=system_prompt,
                 user_prompt=retry_user_prompt,

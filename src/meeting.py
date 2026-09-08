@@ -6,7 +6,7 @@ from .io_utils import load_txt,save_result
 from .token_utils import count_tokens,calculate_token_budget
 from .transcript_parser import parse_transcript
 from .schemas import MeetingSummary
-from .llm_uitls import call_llm_structured
+from .llm_utils import call_llm_structured
 
 
 

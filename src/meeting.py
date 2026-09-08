@@ -5,7 +5,8 @@ from .text_splitter import format_chunk,chunk_messages
 from .io_utils import load_txt,save_result
 from .token_utils import count_tokens,calculate_token_budget
 from .transcript_parser import parse_transcript
-import json
+from .schemas import MeetingSummary
+from .llm_uitls import call_llm_structured
 
 
 
@@ -120,7 +121,7 @@ def merge_summaries(
     system_prompt_path: Path = Path(__file__).parent.parent / 'prompts' / 'system_prompt.txt',
     user_instruction_path: Path | None = None,
     is_final: bool = False
-    ) -> str | dict:
+    ) -> str | MeetingSummary:
     
     system_prompt = load_txt(system_prompt_path)
     merge_prompt = load_txt(merge_prompt_path)
@@ -178,10 +179,20 @@ JSON 结构必须为：
 {summaries_txt}    
 '''
         
-    result = call_llm(system_prompt,user_prompt)
     if is_final:
-        return json.loads(result)
-    return result
+        return call_llm_structured(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                schema=MeetingSummary,
+                max_retries=2
+                )
+    else:
+        result = call_llm(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt
+            )
+        return result
+    
 
 def merge_summaries_iteratively(
     summaries: list[str],
@@ -296,7 +307,7 @@ def summarize_long_meeting(
     reserved_output_tokens: int = 4000,
     safety_margin: int = 1000,
     preferred_chunk_limit: int = 8000
-) -> str | dict:
+) -> str | MeetingSummary:
     ##获取会议内容+格式化
     meeting_txt = load_txt(meeting_txt_path)
     messages = parse_transcript(meeting_txt)

@@ -1,13 +1,17 @@
-from src import save_result,summarize_long_meeting,merge_summaries_iteratively
+from src import save_result,summarize_long_meeting
 from pathlib import Path
 
 def main() -> None:
    result = summarize_long_meeting(
       meeting_txt_path='data/test.txt',
       system_prompt_path='prompts/system_prompt.txt',
-      chunk_prompt_path='prompts/chunk_prompt.txt'
+      chunk_prompt_path='prompts/chunk_prompt.txt',
    )
    print(result)
+   save_result(
+      result=result,
+      output_path= 'outputs'/'test_result.md'
+      )
    
    
 if __name__ == '__main__':

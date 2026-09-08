@@ -155,8 +155,6 @@ def merge_summaries(
     result = call_llm(system_prompt,user_prompt)
     return result
 
-
-
 def merge_summaries_iteratively(
     summaries: list[str],
     merge_prompt_path = Path(__file__).parent.parent / 'prompts' / 'merge_prompt.txt',
@@ -171,72 +169,96 @@ def merge_summaries_iteratively(
     if not summaries:
         return ''
     
+    if len(summaries) == 1:
+        return summaries[0]
+    
     max_tokens = prepare_context_budget(
-        chunk_prompt_path=merge_prompt_path,
         system_prompt_path=system_prompt_path,
+        chunk_prompt_path=merge_prompt_path,
         context_limit=context_limit,
         reserved_output_tokens=reserved_output_tokens,
         safety_margin=safety_margin,
         preferred_chunk_limit=preferred_chunk_limit
-        )
+    )
+    
     total_tokens = sum(count_tokens(summary) for summary in summaries)
     
     if total_tokens <= max_tokens:
         return merge_summaries(
-        summaries=summaries,
-        merge_prompt_path=merge_prompt_path,
-        system_prompt_path=system_prompt_path,
-        user_instruction_path=user_instruction_path,
-        is_final=True
-        )
-    
-    cur_summaries = summaries
-    cur_tokens = 0
-    merged_summaries = []
-    summary_chunk = []
-    for cur_summary in cur_summaries:
-        summary_token = count_tokens(cur_summary)
-        if summary_token > max_tokens:
-            raise ValueError("Single summary exceeds max_tokens")
-        if cur_tokens + summary_token <= max_tokens:
-            cur_tokens += summary_token
-            summary_chunk.append(cur_summary)
-        else:
-            if summary_chunk:
-                if len(summary_chunk) == 1:
-                    merged_summaries.append(summary_chunk[0]) 
-                else:
-                    merged_summary = merge_summaries(
-                        summary_chunk,
-                        merge_prompt_path=merge_prompt_path,
-                        system_prompt_path=system_prompt_path,
-                        user_instruction_path=user_instruction_path,
-                        is_final = False
-                        )
-                    merged_summaries.append(merged_summary)
-                    
-            cur_tokens = summary_token
-            summary_chunk = [cur_summary]
-    if summary_chunk:
-        if len(summary_chunk) == 1:
-            merged_summaries.append(summary_chunk[0]) 
-        else:
-            merged_summary = merge_summaries(
-                        summary_chunk,
-                        merge_prompt_path=merge_prompt_path,
-                        system_prompt_path=system_prompt_path,
-                        user_instruction_path=user_instruction_path,
-                        is_final=False
-                        )
-            merged_summaries.append(merged_summary)
-    
-    return merge_summaries_iteratively(
-            summaries=merged_summaries,
+            summaries=summaries,
             merge_prompt_path=merge_prompt_path,
             system_prompt_path=system_prompt_path,
             user_instruction_path=user_instruction_path,
+            is_final=True
+        )
+        
+    merged_summaries = []
+    current_group = []
+    current_tokens = 0
+    
+    for summary in summaries:
+        summary_tokens = count_tokens(summary)
+        
+        if summary_tokens > max_tokens:
+            raise ValueError('Single summary exceeds max_tokens')
+        
+        if current_tokens + summary_tokens <= max_tokens:
+            current_group.append(summary)
+            current_tokens += summary_tokens
+        else:
+            if len(current_group) == 1:
+                merged_summaries.append(current_group[0])
+            else:
+                merged_summaries.append(
+                    merge_summaries(
+                    summaries=current_group,
+                    merge_prompt_path=merge_prompt_path,
+                    system_prompt_path=system_prompt_path,
+                    user_instruction_path=user_instruction_path,
+                    is_final=False
+                    )
+                )
+        
+            current_group = [summary]
+            current_tokens = summary_tokens
+        
+    if current_group:
+        if len(current_group) == 1:
+            merged_summaries.append(current_group[0])
+        else:
+            merged_summaries.append(
+                merge_summaries(
+                    summaries=current_group,
+                    merge_prompt_path=merge_prompt_path,
+                    system_prompt_path=system_prompt_path,
+                    user_instruction_path=user_instruction_path,
+                    is_final=False
+                )
             )
 
+    if len(merged_summaries) == len(summaries):
+        merged_summaries = [
+            merge_summaries(
+                summaries=[summary],
+                merge_prompt_path=merge_prompt_path,
+                system_prompt_path=system_prompt_path,
+                user_instruction_path=user_instruction_path,
+                is_final=False
+            )
+            for summary in summaries
+        ]
+        
+    return merge_summaries_iteratively(
+        summaries=merged_summaries,
+        merge_prompt_path=merge_prompt_path,
+        system_prompt_path=system_prompt_path,
+        user_instruction_path=user_instruction_path,
+        context_limit=context_limit,
+        reserved_output_tokens=reserved_output_tokens,
+        safety_margin=safety_margin,
+        preferred_chunk_limit=preferred_chunk_limit
+    )     
+    
 ##调度
 def summarize_long_meeting(
     user_instruction_path: Path | None = None,

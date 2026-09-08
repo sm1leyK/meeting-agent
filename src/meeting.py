@@ -162,6 +162,10 @@ def merge_summaries_iteratively(
     merge_prompt_path = Path(__file__).parent.parent / 'prompts' / 'merge_prompt.txt',
     system_prompt_path: Path = Path(__file__).parent.parent / 'prompts' / 'system_prompt.txt',
     user_instruction_path: Path | None = None,
+    context_limit: int = 1000000,
+    reserved_output_tokens: int = 4000,
+    safety_margin: int = 1000,
+    preferred_chunk_limit: int = 8000
 ) -> str:
     
     if not summaries:
@@ -169,6 +173,11 @@ def merge_summaries_iteratively(
     
     max_tokens = prepare_context_budget(
         chunk_prompt_path=merge_prompt_path,
+        system_prompt_path=system_prompt_path,
+        context_limit=context_limit,
+        reserved_output_tokens=reserved_output_tokens,
+        safety_margin=safety_margin,
+        preferred_chunk_limit=preferred_chunk_limit
         )
     total_tokens = sum(count_tokens(summary) for summary in summaries)
     

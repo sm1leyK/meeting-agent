@@ -6,12 +6,12 @@ def main() -> None:
       meeting_txt_path='data/test.txt',
       system_prompt_path='prompts/system_prompt.txt',
       chunk_prompt_path='prompts/chunk_prompt.txt',
+      merge_prompt_path='prompts/merge_prompt.txt'
    )
    print(result)
-   save_result(
-      result=result,
-      output_path= 'outputs'/'test_result.md'
-      )
+   print(type(result))
+   
+
    
    
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 from .config import Config
 from openai import OpenAI
 
-def call_llm(system_prompt: str, user_prompt: str) -> str:
+def call_llm(messages: list[dict]) -> str:
     ##设置client
     config = Config()
     try:
@@ -17,10 +17,7 @@ def call_llm(system_prompt: str, user_prompt: str) -> str:
     ##回复
     response = client.chat.completions.create(
     model='deepseek-v4-flash',
-    messages=[
-        {'role':'system','content':system_prompt},
-        {'role':'user','content':user_prompt}
-    ],
+    messages=messages
     stream=False,
     ##reasoning_effort='high',
     ##extra_body={'thinking':{'type':'enabled'}}
@@ -28,3 +25,12 @@ def call_llm(system_prompt: str, user_prompt: str) -> str:
 
     response_text = response.choices[0].message.content
     return response_text
+
+def build_basic_messages(
+    system_prompt: str,
+    user_prompt: str
+) -> list[dict]:
+    return [
+        {'role':'system','content':system_prompt},
+        {'role':'user','content':user_prompt}
+    ]

@@ -1,4 +1,4 @@
-from .llm import call_llm
+from .llm import call_llm,build_basic_messages
 from pathlib import Path
 import os
 from .text_splitter import format_chunk,chunk_messages
@@ -47,23 +47,6 @@ def build_user_prompt(
 '''
     return user_prompt
 
-##调用llm
-def summarize_meeting(
-    user_instruction_path: Path | None = None,
-    meeting_txt_path = Path(__file__).parent.parent / 'data' / 'meeting.txt',
-    system_prompt_path = Path(__file__).parent.parent / 'prompts' / 'system_prompt.txt'
-                      ) -> str:
-    system_prompt = load_txt(system_prompt_path)
-    meeting_txt = load_txt(meeting_txt_path)
-    if user_instruction_path and user_instruction_path.exists():
-        user_instruction = load_txt(user_instruction_path)
-        user_prompt = build_user_prompt(meeting_txt,user_instruction)
-    else:
-        user_prompt = build_user_prompt(meeting_txt)
-    
-    result = call_llm(system_prompt,user_prompt)
-    return result
-
 ##构造局部prompt
 def summarize_chunk(
     chunk_text: str,
@@ -80,7 +63,10 @@ def summarize_chunk(
     
 {chunk_text}
 '''
-    summary = call_llm(system_prompt,user_prompt)
+    messages = build_basic_messages(
+        system_prompt=system_prompt,
+        user_prompt=user_prompt)
+    summary = call_llm(messages)
     return summary
 
 ##总结局部prompt
@@ -187,12 +173,12 @@ JSON 结构必须为：
                 max_retries=2
                 )
     else:
-        result = call_llm(
+        messages = build_basic_messages(
             system_prompt=system_prompt,
             user_prompt=user_prompt
             )
-        return result
-    
+        result = call_llm(messages=messages)
+        return result 
 
 def merge_summaries_iteratively(
     summaries: list[str],

@@ -66,7 +66,7 @@ def summarize_chunk(
     messages = build_basic_messages(
         system_prompt=system_prompt,
         user_prompt=user_prompt)
-    summary = call_llm(messages)
+    summary = call_llm(messages=messages)
     return summary
 
 ##总结局部prompt

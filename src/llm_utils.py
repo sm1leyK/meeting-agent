@@ -1,7 +1,7 @@
 from .schemas import MeetingSummary
 import json
 from pydantic import ValidationError
-from .llm import call_llm
+from .llm import call_llm,build_basic_messages
 
 def call_llm_structured(
     system_prompt: str,
@@ -10,7 +10,11 @@ def call_llm_structured(
     max_retries: int = 2
 ) -> MeetingSummary:##返回类型没改
     
-    result = call_llm(system_prompt,user_prompt)
+    messages = build_basic_messages(
+        system_prompt=system_prompt,
+        user_prompt=user_prompt
+        )
+    result = call_llm(messages=messages)
     
     try:
         parsed_result = json.loads(result)

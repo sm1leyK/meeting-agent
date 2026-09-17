@@ -32,12 +32,14 @@ def send_message(
         history_turns=history_turns
         )
     
-    result = call_llm(messages=messages)
     save_message(
-        session_id=session_id,
-        role='user',
-        content=user_input    
-    )
+            session_id=session_id,
+            role='user',
+            content=user_input    
+        )
+    
+    result = call_llm(messages=messages)
+    
     save_message(
         session_id=session_id,
         role='assistant',

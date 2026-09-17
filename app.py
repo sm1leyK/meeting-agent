@@ -3,26 +3,16 @@ from pathlib import Path
 from src.database import Base,engine
 
 def main() -> None:
-   system_prompt = '''你是一个简洁、可靠的聊天助手。
+   meeting_text = """
+    张三：我们下周需要完成项目第一版。
+    李四：我负责整理数据。
+    王五：我负责模型训练。
+    张三：那就定在下周五之前完成初版，周四晚上先内部检查一次。
+    """
+   result = summarize_long_meeting()
 
-请遵守以下规则：
-1. 认真参考当前对话中已经提供的历史消息。
-2. 如果用户的问题涉及前文内容，应根据历史消息回答，不要假装不知道。
-3. 不要编造历史中没有出现的信息。
-4. 回答尽量简洁、直接。'''
-   
-   Base.metadata.create_all(bind=engine)
-   
-
-   user_input = input('Input: ')
-   result = send_message(
-            system_prompt=system_prompt,
-            session_id=1,
-            user_input=user_input,
-            history_turns=5
-         )
    print(result)
-   
+
    
 
    

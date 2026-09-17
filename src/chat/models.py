@@ -1,7 +1,7 @@
 from sqlalchemy import Integer, String, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .database import Base
+from ..database import Base
 
 class ConversationSession(Base):
     __tablename__ = 'conversation_sessions'

@@ -1,12 +1,12 @@
-from .llm import call_llm,build_basic_messages
+from ..core.llm import call_llm,build_basic_messages
 from pathlib import Path
 import os
 from .text_splitter import format_chunk,chunk_messages
-from .io_utils import load_txt,save_result
-from .token_utils import count_tokens,calculate_token_budget
+from ..io_utils import load_txt,save_result
+from ..core.token_utils import count_tokens,calculate_token_budget
 from .transcript_parser import parse_transcript
-from .schemas import MeetingSummary
-from .llm_utils import call_llm_structured
+from ..core.schemas import MeetingSummary
+from ..core.llm_utils import call_llm_structured
 
 
 
@@ -284,11 +284,11 @@ def merge_summaries_iteratively(
     
 ##调度
 def summarize_long_meeting(
-    user_instruction_path: Path | None = None,
-    merge_prompt_path = Path(__file__).parent.parent / 'prompts' / 'merge_prompt.txt',
-    meeting_txt_path = Path(__file__).parent.parent / 'data' / 'meeting.txt',
-    system_prompt_path: Path = Path(__file__).parent.parent / 'prompts' / 'system_prompt.txt',
-    chunk_prompt_path: Path = Path(__file__).parent.parent / 'prompts' / 'chunk_prompt.txt',
+    user_instruction_path = Path(__file__).parent.parent.parent / 'prompts' / 'user_instruction.txt',
+    merge_prompt_path = Path(__file__).parent.parent.parent / 'prompts' / 'merge_prompt.txt',
+    meeting_txt_path = Path(__file__).parent.parent.parent / 'data' / 'meeting.txt',
+    system_prompt_path: Path = Path(__file__).parent.parent.parent / 'prompts' / 'system_prompt.txt',
+    chunk_prompt_path: Path = Path(__file__).parent.parent.parent / 'prompts' / 'chunk_prompt.txt',
     context_limit: int = 1000000,
     reserved_output_tokens: int = 4000,
     safety_margin: int = 1000,

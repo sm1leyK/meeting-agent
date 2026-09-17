@@ -1,8 +1,8 @@
 from tokenizers import Tokenizer
 from pathlib import Path
-from .io_utils import load_txt
+from ..io_utils import load_txt
 
-base_dir = Path(__file__).parent.parent
+base_dir = Path(__file__).parent.parent.parent
 chat_tokenizer_dir = base_dir / 'tokenizers'
 tokenizer_dir = chat_tokenizer_dir / 'tokenizer.json'
 tokenizer = Tokenizer.from_file(str(tokenizer_dir))

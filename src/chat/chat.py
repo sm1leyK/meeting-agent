@@ -1,4 +1,4 @@
-from .llm import call_llm
+from ..core.llm import call_llm
 from .storage import load_history,save_message
 
 def build_chat_messages(

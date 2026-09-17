@@ -1,4 +1,4 @@
-from .config import Config
+from ..config import Config
 from openai import OpenAI
 
 def call_llm(messages: list[dict]) -> str:

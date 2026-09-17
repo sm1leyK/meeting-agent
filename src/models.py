@@ -10,7 +10,8 @@ class ConversationSession(Base):
     title: Mapped[str] = mapped_column(String(200),default='')
     
     messages: Mapped[list['ChatMessage']] = relationship(
-        back_populates='session'
+        back_populates='session',
+        cascade='all, delete-orphan'
     )
     
 class ChatMessage(Base):

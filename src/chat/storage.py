@@ -13,10 +13,9 @@ def create_session(title: str) -> int:
             db.commit()
             db.refresh(session)
             return session.id
-        except Exception as e:
+        except Exception:
             db.rollback()
-            raise e
-            
+            raise            
 
 def save_message(
     session_id: int,
@@ -33,7 +32,7 @@ def save_message(
             stmt = select(ConversationSession).where(ConversationSession.id == session_id)
             is_exist = db.execute(stmt).scalars().first()
             if is_exist is None:
-                raise ValueError(f'Session{session_id} does not exist.')
+                raise ValueError(f'Session {session_id} does not exist.')
                 
             chat_message = ChatMessage(
                 session_id=session_id,
@@ -44,9 +43,9 @@ def save_message(
             db.commit()
             db.refresh(chat_message)
             return chat_message.id
-        except Exception as e:
+        except Exception:
             db.rollback()
-            raise e
+            raise
 
 def get_session(session_id: int) -> ConversationSession | None:
     
@@ -64,7 +63,7 @@ def load_history(session_id: int) -> list[dict]:
         stmt = select(ConversationSession).where(ConversationSession.id == session_id)
         is_exist = db.execute(stmt).scalars().first()
         if is_exist is None:
-            raise ValueError(f'Session{session_id} does not exist.')
+            raise ValueError(f'Session {session_id} does not exist.')
             
         stmt = select(ChatMessage).where(ChatMessage.session_id == session_id).order_by(ChatMessage.id)
         messages = db.execute(stmt).scalars().all()
@@ -90,10 +89,10 @@ def delete_session(session_id: int) -> None:
             stmt = select(ConversationSession).where(ConversationSession.id == session_id)
             session = db.execute(stmt).scalars().first()
             if session is None:
-                raise ValueError(f'Session{session_id} does not exist.')
+                raise ValueError(f'Session {session_id} does not exist.')
             db.delete(session)
             db.commit()
-        except Exception as e:
+        except Exception:
             db.rollback()
-            raise e
+            raise
     

@@ -189,7 +189,7 @@ def merge_summaries_iteratively(
     reserved_output_tokens: int = 4000,
     safety_margin: int = 1000,
     preferred_chunk_limit: int = 8000
-) -> str:
+) -> str | MeetingSummary:
     
     if not summaries:
         return ''

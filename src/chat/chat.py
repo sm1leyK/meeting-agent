@@ -38,27 +38,26 @@ def send_message(
                         query_vector=query_vector,
                         top_k=top_k
                     )
-        if results is None:
-            raise ValueError('Store is empty.')
+        if results is not None:
         
-        if should_use_rag(threshold=threshold,best_score=results[0][1]):
-            
-            context = build_context(results=results)
+            if should_use_rag(threshold=threshold,best_score=results[0][1]):
+                
+                context = build_context(results=results)
 
-            effective_system_prompt = system_prompt + """
-当用户消息中包含 Context 时：
-- 仅根据提供的 Context 回答问题。
-- 不要使用 Context 之外的信息补充事实。
-- 如果 Context 无法回答问题，请明确说明无法从提供的信息中得到答案。
-"""
-            
-            user_message = f'''
-            Context:
-            {context}
-            
-            Question:
-            {user_input}
-            '''
+                effective_system_prompt = system_prompt + """
+    当用户消息中包含 Context 时：
+    - 仅根据提供的 Context 回答问题。
+    - 不要使用 Context 之外的信息补充事实。
+    - 如果 Context 无法回答问题，请明确说明无法从提供的信息中得到答案。
+    """
+                
+                user_message = f'''
+                Context:
+                {context}
+                
+                Question:
+                {user_input}
+                '''
     
     messages = build_chat_messages(
         system_prompt=effective_system_prompt,

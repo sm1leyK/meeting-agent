@@ -1,131 +1,231 @@
 # Meeting Agent
 
-一个轻量级的 Python 会议助手，使用大语言模型根据会议记录生成结构化会议纪要。
+一个从零实现的 Python 会议智能助手，用于学习和实践 LLM Application、长文本处理、结构化输出、会话持久化与 Retrieval-Augmented Generation（RAG）。
 
-本项目目前主要作为一个 LLM 应用开发学习项目，用于从底层理解 Prompt 设计、API 调用、会议文本解析、长文本切分、Token 预算控制、Map-Reduce 总结，以及后续的结构化输出、RAG 检索问答与 Agent Workflow。
+当前项目已经支持两条主要能力：
 
-Meeting Agent 基于 Python 与 DeepSeek API 从零实现，现阶段尽量避免直接依赖 LangChain 等高级框架，而是优先手动实现核心模块，以理解 LLM Application / Agent 背后的基础工作原理。
+1. **Meeting Summarization**
+   对完整会议记录进行长文本解析、分块、Map-Reduce 总结，并生成结构化会议纪要。
 
-## 功能
+2. **Meeting RAG Chat**
+   将会议文本构建为本地知识库，通过 Embedding、Cosine Similarity 与 Top-K Retrieval 实现基于会议内容的问答，同时支持普通聊天与 RAG 的自动路由。
 
-目前已完成：
+本项目主要用于学习，因此现阶段尽量避免直接使用 LangChain、LangGraph 等高级框架，而是使用原生 Python、NumPy、SQLAlchemy 等工具手动实现核心流程，以理解 LLM Application / Agent 背后的基本机制。
 
-* 从文本文件读取会议记录
-* 调用 DeepSeek API 处理会议内容
-* 生成结构化会议纪要
-* 支持自定义用户指令
-* 分离 System Prompt、User Instruction 与 Meeting Transcript
-* 使用 `.env` 管理 API Key
-* 基础模块化项目结构
-* 会议转录文本解析
+---
+
+## Current Version
+
+当前开发阶段：
+
+```text
+v0.4 — Retrieval-Augmented Generation
+```
+
+已经完成：
+
+```text
+v0.1  Basic Meeting Summarization
+v0.2  Long Meeting Processing
+v0.3  Structured Output + Persistent Chat
+v0.4  Retrieval-Augmented Generation
+```
+
+下一阶段：
+
+```text
+v0.5  Agent Workflow
+```
+
+---
+
+# Features
+
+## Meeting Summarization
+
+目前支持：
+
+* 读取会议 Transcript
+* 自定义 User Instruction
+* System Prompt / User Prompt 分离
+* Transcript Parsing
 * Speaker-aware Chunking
-* 基于 DeepSeek V4 Tokenizer 的 Token 计数
 * Token-aware Chunking
 * Context Budget Control
-* 基于 Chunk 的局部会议总结
-* Map 阶段长会议摘要处理
+* Map-Reduce Summarization
+* Recursive Reduce
+* Structured JSON Output
+* Pydantic Schema Validation
+* Structured Output Retry
+* 最终结构化会议纪要生成
 
-计划实现：
+最终会议摘要使用 `MeetingSummary` Schema，包括：
 
-* Map-Reduce 中的 Reduce 阶段
-* 结构化 JSON 输出
-* 基于 Embedding 的语义检索
-* 基于 RAG 的会议内容问答
-* 向量检索
-* 科研邮件生成
-* 会议纪要事实核查
-* 简单用户界面
-* 更通用的会议转录格式识别
+```text
+meeting_topic
+main_discussions
+key_facts
+opinions_and_questions
+decisions
+action_items
+```
 
-## 项目结构
+---
+
+## Persistent Chat
+
+项目已经实现基本聊天 Session 与 SQLite 持久化。
+
+支持：
+
+* 创建聊天 Session
+* 保存 User / Assistant Message
+* 加载聊天历史
+* 限制传入 LLM 的历史轮数
+* Session 列表
+* Session 删除
+* SQLite 持久化
+* SQLAlchemy ORM
+* User Message 在 LLM 调用失败时仍然保留
+
+聊天历史不会因为程序退出而丢失。
+
+---
+
+## Retrieval-Augmented Generation
+
+v0.4 已经实现一个不依赖向量数据库框架的最小 RAG Pipeline。
+
+支持：
+
+* 文档句子级 Chunking
+* Token-aware Chunking
+* Chunk Overlap
+* 超长句 Token 级兜底切分
+* Multilingual Embedding
+* NumPy Vector Store
+* Cosine Similarity
+* Top-K Retrieval
+* Context Construction
+* RAG Question Answering
+* RAG / Normal Chat 自动路由
+* RAG 与 Chat Session 集成
+
+当前 Embedding Model：
+
+```text
+sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+```
+
+Embedding Dimension：
+
+```text
+384
+```
+
+---
+
+# Architecture
+
+当前项目主要分为四层：
+
+```text
+Meeting Agent
+│
+├── Meeting Processing
+│   ├── Transcript Parsing
+│   ├── Token-aware Chunking
+│   ├── Map Summarization
+│   ├── Recursive Reduce
+│   └── Structured Output
+│
+├── RAG
+│   ├── Document Chunking
+│   ├── Embedding
+│   ├── Vector Store
+│   ├── Similarity Search
+│   └── Context Construction
+│
+├── Chat
+│   ├── Session
+│   ├── History
+│   ├── SQLite Persistence
+│   └── RAG Routing
+│
+└── Core
+    ├── LLM Interface
+    ├── Tokenizer
+    ├── Structured LLM Utilities
+    └── Schemas
+```
+
+---
+
+# Project Structure
 
 ```text
 meeting-agent/
-
-├── data/
-│   ├── meeting.txt
-│   ├── example_meeting.txt
-│   └── user_instruction.txt
 │
-├── outputs/
+├── app.py
 │
 ├── prompts/
 │   ├── system_prompt.txt
-│   └── chunk_prompt.txt
+│   ├── chunk_prompt.txt
+│   ├── merge_prompt.txt
+│   └── user_instruction.txt
+│
+├── data/
+│   ├── meeting.txt
+│   └── meeting_agent.db
+│
+├── outputs/
 │
 ├── tokenizers/
 │   ├── tokenizer.json
 │   └── tokenizer_config.json
 │
 ├── src/
+│   │
 │   ├── __init__.py
 │   ├── config.py
+│   ├── database.py
 │   ├── io_utils.py
-│   ├── llm.py
-│   ├── meeting.py
-│   ├── text_splitter.py
-│   ├── token_utils.py
-│   └── transcript_parser.py
+│   │
+│   ├── core/
+│   │   ├── llm.py
+│   │   ├── llm_utils.py
+│   │   ├── schemas.py
+│   │   └── token_utils.py
+│   │
+│   ├── meeting/
+│   │   ├── meeting.py
+│   │   ├── text_splitter.py
+│   │   └── transcript_parser.py
+│   │
+│   ├── chat/
+│   │   ├── chat.py
+│   │   ├── models.py
+│   │   └── storage.py
+│   │
+│   └── rag/
+│       ├── __init__.py
+│       ├── chunking.py
+│       ├── embedding.py
+│       ├── vector_store.py
+│       ├── context.py
+│       └── rag.py
 │
-├── app.py
+├── requirements.txt
 ├── .env
 ├── .gitignore
-├── requirements.txt
 └── README.md
 ```
 
-## 工作流程
+---
 
-当前项目已经同时支持基础短会议流程与长会议处理流程。
+# Meeting Summarization Pipeline
 
-### 基础会议总结流程
-
-```text
-Meeting Transcript
-        ↓
-load_txt()
-        ↓
-build_user_prompt()
-        ↓
-System Prompt + User Prompt
-        ↓
-call_llm()
-        ↓
-Meeting Summary
-        ↓
-save_result()
-```
-
-其中：
-
-```text
-System Prompt
-    ↓
-定义助手长期保持的角色、事实约束与行为规则
-
-User Instruction
-    ↓
-定义用户本次具体希望完成的任务
-
-Meeting Transcript
-    ↓
-提供需要处理的会议原始数据
-```
-
-同一份会议记录可以通过不同 User Instruction 完成不同任务，例如：
-
-* 生成完整会议纪要
-* 提取行动项
-* 提取导师意见
-* 查找尚未解决的问题
-* 分析会议中的不同观点
-* 生成其他结构化内容
-
-项目中的一个核心设计思路是：
-
-> 会议记录是数据，Prompt 决定如何处理这些数据。
-
-### 长会议处理流程
+完整会议总结流程：
 
 ```text
 Raw Meeting Transcript
@@ -136,84 +236,28 @@ parse_transcript()
         ↓
 Structured Messages
         ↓
-prepare_chunk_budget()
+prepare_context_budget()
         ↓
-effective_chunk_limit
-        ↓
-chunk_messages()
+Token-aware Chunking
         ↓
 Chunks
         ↓
-format_chunk()
+Map
         ↓
-summarize_chunks()
+Partial Structured Summaries
         ↓
-Partial Summaries
+Recursive Reduce
+        ↓
+Final Structured Summary
+        ↓
+MeetingSummary
 ```
 
-当前已完成 Map 阶段，后续将在 Reduce 阶段将多个局部摘要合并为最终会议纪要。
-
-## Prompt 设计
-
-当前项目将 Prompt 分为不同职责层级。
-
-### System Prompt
-
-用于定义模型长期保持的角色与约束，例如：
-
-* 作为严谨的会议内容处理助手
-* 不得编造会议中不存在的信息
-* 区分事实、个人建议、讨论方向、明确决定与后续行动
-* 不得自行补充负责人、截止时间或结论
-* 对疑似 ASR 转写错误保持谨慎
-* 当前会议片段不足以支持结论时，应明确标记不确定性
-
-### User Instruction
-
-用于表达用户本次具体想完成的任务，例如：
-
-```text
-请生成结构化会议纪要，重点包括：
-
-1. 当前研究进展
-2. 当前问题
-3. 导师意见
-4. 已明确决定的事项
-5. 后续行动项
-```
-
-会议原文会作为数据与 User Instruction 一起加入 User Prompt。
-
-### Chunk Prompt
-
-长会议被切分后，Chunk Prompt 用于指导模型处理单个会议片段。
-
-其主要职责包括：
-
-* 提取当前片段的主要讨论内容
-* 保留关键事实与研究进展
-* 区分观点、建议、决定与行动项
-* 避免把当前状态误写成后续行动
-* 对 ASR 转写错误与实体名称保持谨慎
-* 为后续 Reduce 阶段保留足够信息
-
-当前 Map 阶段的实际 Prompt 结构：
-
-```text
-System Role:
-system_prompt.txt
-
-User Role:
-chunk_prompt.txt
-+
-当前会议片段
-```
+---
 
 ## Transcript Parsing
 
-会议转录文本首先经过解析器转换为统一的数据结构。
-
-当前支持格式：
+当前主要支持：
 
 ```text
 Speaker(00:00:00): Content
@@ -225,7 +269,7 @@ Speaker(00:00:00): Content
 陈杰(00:03:01): Yeah, the grant.
 ```
 
-解析后：
+转换为：
 
 ```python
 {
@@ -235,100 +279,101 @@ Speaker(00:00:00): Content
 }
 ```
 
-多个发言最终表示为：
+最终会议记录表示为：
 
 ```python
 list[dict]
 ```
 
-示意：
+---
 
-```python
-[
-    {
-        "speaker": "...",
-        "timestamp": "...",
-        "content": "..."
-    },
-    ...
-]
-```
+# Token-aware Chunking
 
-后续计划扩展对不同会议平台、ASR 工具和 Transcript 格式的识别。
+会议总结与 RAG 使用不同的 Chunking 逻辑。
 
-## Chunking
+## Meeting Chunking
 
-为了处理较长会议文本，项目实现了 Speaker-aware Chunking。
-
-核心原则：
-
-* 尽量保持单条发言完整
-* 不直接按固定字符位置切断发言
-* 按会议发言顺序进行累积
-* 超过当前 Chunk 上限时创建新的 Chunk
-
-结构：
+会议 Transcript 已经具有：
 
 ```text
-Structured Messages
-        ↓
-chunk_messages()
-        ↓
-List[List[Message]]
+speaker
+timestamp
+content
 ```
 
-之后通过：
+因此会议 Chunker 会尽量保证：
+
+* 不拆断单条 Speaker Message
+* 保留 Speaker
+* 保留 Timestamp
+* 保持发言顺序
+* 根据 Token Budget 控制 Chunk 大小
+
+---
+
+## RAG Chunking
+
+RAG 面向普通文本，因此采用：
 
 ```text
-format_chunk()
+Document
+↓
+Sentence Split
+↓
+Token Count
+↓
+Chunk Accumulation
+↓
+Overlap
 ```
 
-将结构化数据重新转换为：
+如果单个句子本身超过 `max_tokens`：
 
 ```text
-Speaker(timestamp): content
+Long Sentence
+↓
+Tokenizer Encode
+↓
+Token-level Split
+↓
+Tokenizer Decode
 ```
 
-形式的文本，供 LLM 使用。
+Token-level split 只作为最后的 fallback，以尽量避免破坏自然语言边界。
 
-## Token Counting
+---
 
-早期版本使用字符数控制 Chunk 大小：
+# Token Counting
 
-```text
-len(text)
-```
-
-当前已升级为基于 DeepSeek V4 Tokenizer 的真实 Token 计数：
+项目使用本地 DeepSeek Tokenizer 计算 Token 数。
 
 ```text
-text
-    ↓
-DeepSeek V4 Tokenizer
-    ↓
+Text
+↓
+DeepSeek Tokenizer
+↓
 Token IDs
-    ↓
+↓
 count_tokens()
-    ↓
+↓
 Token Count
 ```
 
-项目使用 DeepSeek 官方提供的 `tokenizer.json` 进行本地 Token 计算。
+Token 计数用于：
 
-Token 计数主要用于：
+* Meeting Chunk Size
+* Prompt Size
+* Context Budget
+* Long Text Processing
+* RAG Chunking
 
-* Chunk 大小控制
-* Prompt Token 计算
-* Context Budget 估算
-* 后续 API 成本统计与上下文管理
+---
 
-## Context Budget Control
+# Context Budget
 
-仅限制 Chunk 本身的 Token 数仍不足以保证完整请求不会超过模型上下文长度。
+会议长文本处理并不是简单限制 Chunk 大小。
 
-因此项目进一步加入 Context Budget Control。
-
-当前使用的基本约束：
+完整预算：
 
 ```text
 input_tokens
@@ -340,7 +385,7 @@ safety_margin
 context_limit
 ```
 
-其中：
+首先计算：
 
 ```text
 fixed_prompt_tokens
@@ -350,7 +395,7 @@ system_prompt_tokens
 chunk_prompt_tokens
 ```
 
-理论上可用于会议 Chunk 的空间：
+然后：
 
 ```text
 available_chunk_tokens
@@ -361,13 +406,7 @@ context_limit
 - safety_margin
 ```
 
-同时，为避免单个 Chunk 过大，项目额外设置：
-
-```text
-preferred_chunk_limit
-```
-
-最终实际使用：
+最终：
 
 ```text
 effective_chunk_limit
@@ -378,61 +417,463 @@ min(
 )
 ```
 
-当前默认配置：
+再将 `effective_chunk_limit` 传给会议 Chunker。
+
+---
+
+# Map-Reduce Summarization
+
+## Map
+
+每个会议 Chunk 独立生成结构化局部摘要：
 
 ```text
-context_limit = 1,000,000
-reserved_output_tokens = 4,000
-safety_margin = 1,000
-preferred_chunk_limit = 8,000
-```
-
-`effective_chunk_limit` 最终传入 `chunk_messages()` 作为实际 Chunk Token 上限。
-
-## Map Summarization
-
-当前已经完成 Map 阶段。
-
-对于多个 Chunk：
-
-```text
-chunk 1 → summary 1
-chunk 2 → summary 2
-chunk 3 → summary 3
+Chunk 1 → Summary 1
+Chunk 2 → Summary 2
+Chunk 3 → Summary 3
 ...
 ```
 
-核心流程：
+每个 Chunk 都经过：
 
 ```text
-Chunk
-↓
-format_chunk()
-↓
 System Prompt
 +
 Chunk Prompt
 +
 Chunk Text
 ↓
-call_llm()
+LLM
 ↓
-Partial Summary
+Structured Summary
 ```
 
-多个 Partial Summary 将在后续 Reduce 阶段进一步合并。
+---
 
-## 环境配置
+## Reduce
 
-### 1. 克隆仓库
+多个局部摘要进一步合并：
+
+```text
+Partial Summaries
+↓
+merge_summaries()
+↓
+Merged Summary
+```
+
+如果合并后的文本仍然过长，则继续递归 Reduce：
+
+```text
+Summaries
+↓
+Group
+↓
+Merge
+↓
+Still too large?
+├── Yes → Reduce again
+└── No  → Final Summary
+```
+
+最终生成完整会议纪要。
+
+---
+
+# Structured Output
+
+v0.3 将自由文本输出升级为了结构化输出。
+
+当前使用：
+
+```text
+LLM
+↓
+JSON String
+↓
+json.loads()
+↓
+dict
+↓
+Pydantic Validation
+↓
+MeetingSummary
+```
+
+如果出现：
+
+```text
+JSONDecodeError
+```
+
+或：
+
+```text
+ValidationError
+```
+
+系统可以重新请求模型生成符合 Schema 的输出。
+
+当前 Schema：
+
+```python
+MeetingSummary
+
+meeting_topic: str
+main_discussions: list[str]
+key_facts: list[str]
+opinions_and_questions: list[str]
+decisions: list[str]
+action_items: list[str]
+```
+
+---
+
+# Chat and Persistence
+
+Chat 使用 Session 组织多轮对话。
+
+流程：
+
+```text
+session_id
+↓
+load_history()
+↓
+build_chat_messages()
+↓
+save user message
+↓
+call_llm()
+↓
+save assistant message
+```
+
+User Message 会在 LLM 调用前保存。
+
+因此如果模型调用失败：
+
+```text
+User Message
+✅ retained
+
+Assistant Message
+❌ not created
+```
+
+当前持久化使用：
+
+```text
+SQLite
++
+SQLAlchemy ORM
+```
+
+主要数据结构：
+
+```text
+ConversationSession
+    ↓
+ChatMessage
+```
+
+Session 删除时，其所属 ChatMessage 会通过 ORM Cascade 一并删除。
+
+---
+
+# RAG Pipeline
+
+v0.4 的核心流程：
+
+```text
+Document
+↓
+Chunking
+↓
+Embedding
+↓
+Vector Store
+```
+
+查询时：
+
+```text
+User Query
+↓
+Query Embedding
+↓
+Cosine Similarity
+↓
+Top-K Retrieval
+↓
+Relevant Chunks
+↓
+Context Construction
+↓
+LLM
+↓
+Answer
+```
+
+---
+
+# Embedding
+
+文本通过：
+
+```text
+sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+```
+
+转换为：
+
+```text
+384-dimensional vector
+```
+
+例如：
+
+```text
+"K负责实现RAG模块"
+↓
+Embedding Model
+↓
+[0.12, -0.31, 0.08, ...]
+```
+
+多个 Chunk：
+
+```text
+n chunks
+↓
+embed_chunks()
+↓
+shape = (n, 384)
+```
+
+---
+
+# Vector Store
+
+目前为了理解向量检索原理，没有直接使用 FAISS、Chroma 或其他 Vector Database。
+
+项目手动实现了一个最小 `VectorStore`：
+
+```text
+chunks
++
+embeddings
+```
+
+支持：
+
+* 添加 Chunk
+* 添加 Embedding
+* 数量一致性检查
+* NumPy Vector Concatenation
+* Cosine Similarity Search
+* Top-K Retrieval
+
+以后可以替换为：
+
+* FAISS
+* Chroma
+* pgvector
+* Milvus
+* Pinecone
+* Weaviate
+
+---
+
+# Cosine Similarity
+
+Query Vector 与所有 Chunk Embedding 计算余弦相似度：
+
+```text
+query_vector
+      ↓
+VectorStore Embeddings
+      ↓
+Cosine Similarity
+      ↓
+Similarity Scores
+      ↓
+argsort()
+      ↓
+Top-K
+```
+
+当前实现使用 NumPy，因此可以一次性计算 Query 与所有 Chunk 的相似度。
+
+---
+
+# RAG / Chat Routing
+
+当前 Chat 会先进行 Retrieval：
+
+```text
+User Query
+↓
+Embedding
+↓
+Top-1 Similarity
+↓
+Threshold
+```
+
+如果：
+
+```text
+score >= threshold
+```
+
+则进入：
+
+```text
+RAG
+```
+
+否则进入：
+
+```text
+Normal Chat
+```
+
+因此：
+
+```text
+Meeting-related Question
+→ RAG
+
+General Question
+→ Normal Chat
+```
+
+---
+
+## Important Limitation
+
+当前路由仍然属于 **experimental heuristic**。
+
+真实会议测试发现：
+
+* 某些与知识库无关的问题仍可能获得较高 Cosine Similarity
+* 某些真正相关的问题可能只获得较低 Similarity
+* 固定 Threshold 无法稳定区分所有 Query
+
+例如，一个知识库中的：
+
+```text
+linear regression
+```
+
+可能会导致：
+
+```text
+“怎么学习线性代数？”
+```
+
+获得较高相似度，尽管知识库实际上不能回答这个问题。
+
+因此：
+
+```text
+Cosine Similarity
+≠
+Knowledge Base Answerability
+```
+
+未来将考虑更可靠的 Routing 方法。
+
+---
+
+# Global Questions vs Local Retrieval
+
+当前 RAG 更适合：
+
+```text
+“Alex 后续需要做什么？”
+“谁介绍了这篇论文？”
+“项目里提到了什么模型？”
+```
+
+这类局部事实问题。
+
+对于：
+
+```text
+“整个会议主要讨论了什么？”
+```
+
+这种全文总结问题，Top-K Retrieval 可能只看到整份会议的一小部分。
+
+因此当前项目中：
+
+```text
+Global Meeting Summary
+→ Meeting Summarization Pipeline
+
+Local Meeting Question
+→ RAG
+```
+
+这两种能力是互补关系，而不是互相替代。
+
+---
+
+# Application Entry
+
+当前 `app.py` 作为一个轻量 CLI 入口。
+
+运行：
 
 ```bash
-git clone <你的仓库地址>
+python app.py
+```
 
+可以提供类似：
+
+```text
+===== Meeting Agent =====
+
+1. Summarize meeting
+2. Chat with meeting
+3. Exit
+```
+
+其中：
+
+```text
+Summarize meeting
+→ summarize_long_meeting()
+
+Chat with meeting
+→ build RAG store
+→ create session
+→ send_message()
+```
+
+未来学习 FastAPI 后，可以在保持业务逻辑不变的情况下，将入口升级为 Web API，例如：
+
+```text
+POST /summarize
+POST /chat
+```
+
+---
+
+# Environment Setup
+
+## Clone
+
+```bash
+git clone https://github.com/sm1leyK/meeting-agent.git
 cd meeting-agent
 ```
 
-### 2. 创建虚拟环境
+---
+
+## Virtual Environment
 
 ```bash
 python -m venv .venv
@@ -450,543 +891,491 @@ Windows：
 .venv\Scripts\activate
 ```
 
-### 3. 安装依赖
+---
+
+## Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-目前主要依赖：
+主要依赖包括：
 
 ```text
 openai
 python-dotenv
-transformers
 tokenizers
+transformers
+numpy
+pydantic
+sqlalchemy
+sentence-transformers
 ```
 
-### 4. 配置环境变量
+---
 
-在项目根目录创建 `.env`：
+## Environment Variables
+
+在项目根目录创建：
+
+```text
+.env
+```
+
+内容：
 
 ```env
 DEEPSEEK_API_KEY=your_api_key_here
 ```
 
-`.env` 中包含 API Key，不应上传到 GitHub。
+`.env` 不应提交到 GitHub。
 
-### 5. 配置 DeepSeek Tokenizer
+---
 
-从 DeepSeek 官方 API 文档下载 DeepSeek V4 Tokenizer，并将相关文件放入：
+# Model
 
-```text
-tokenizers/
-```
-
-例如：
+当前 LLM：
 
 ```text
-tokenizers/
-├── tokenizer.json
-└── tokenizer_config.json
+DeepSeek API
+deepseek-v4-flash
 ```
 
-当前项目实际通过 `tokenizer.json` 加载本地 Tokenizer。
+当前 Embedding Model：
 
-## 使用方法
+```text
+sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+```
 
-将会议记录放入：
+---
+
+# Usage
+
+将会议文本放入：
 
 ```text
 data/meeting.txt
 ```
 
-然后运行：
+运行：
 
 ```bash
 python app.py
 ```
 
-程序会根据当前流程：
+可以选择：
 
 ```text
-读取会议记录
-↓
-解析 Transcript
-↓
-计算 Token Budget
-↓
-进行 Chunking
-↓
-逐 Chunk 调用 LLM
-↓
-返回局部结构化摘要
+1. Summarize meeting
+2. Chat with meeting
+3. Exit
 ```
 
-短会议仍可直接使用基础总结流程。
-
-## 当前开发阶段
-
-项目已经从最基础的：
-
-```text
-Input
-→ Prompt
-→ LLM API
-→ Response
-```
-
-逐步扩展为：
-
-```text
-Transcript
-→ Parse
-→ Tokenize
-→ Budget
-→ Chunk
-→ Map Summarization
-```
-
-当前阶段暂时不使用 LangChain 等高级框架，而是优先自行实现底层流程。
-
-后续将在此基础上继续实现：
-
-```text
-Reduce
-→ Structured Output
-→ RAG
-→ Fact Check
-→ Agent Workflow
-```
+---
 
 # Roadmap
 
 ## v0.1 — Basic Meeting Summarization ✅
 
-完成基础会议总结流程：
+完成：
 
-* [x] 使用 DeepSeek API 调用大语言模型
-* [x] 使用 `.env` 管理 API Key
-* [x] 将模型调用封装至 `llm.py`
-* [x] 分离 System Prompt、User Instruction 与 Meeting Transcript
-* [x] 支持自定义 `user_instruction`
-* [x] 将会议总结结果保存为 Markdown 文件
-* [x] 使用 `app.py` 作为程序入口
-
-基础流程：
-
-```text
-meeting.txt
-    ↓
-build_user_prompt()
-    ↓
-call_llm()
-    ↓
-meeting summary
-    ↓
-save_result()
-```
+* [x] DeepSeek API
+* [x] `.env` API Key
+* [x] Basic Prompt Construction
+* [x] User Instruction
+* [x] Meeting Transcript Input
+* [x] Result Saving
+* [x] CLI Entry
 
 ---
 
 ## v0.2 — Long Meeting Processing ✅
 
-目标：支持较长的会议转录文本，并逐步解决上下文长度限制、会议语义连续性与多阶段总结问题。
+完成：
 
-### v0.2.1 — Transcript Parsing ✅
-
-将原始会议转录文本解析为统一结构。
-
-当前支持：
-
-```text
-Speaker(00:00:00): Content
-```
-
-解析后：
-
-```python
-{
-    "speaker": "...",
-    "timestamp": "...",
-    "content": "..."
-}
-```
-
-已完成：
-
-* [x] 使用正则表达式识别会议发言
-* [x] 提取 speaker
-* [x] 提取 timestamp
-* [x] 提取 content
-* [x] 将 transcript 转换为 `list[dict]`
-
-流程：
-
-```text
-Raw Transcript
-      ↓
-parse_transcript()
-      ↓
-Structured Messages
-```
-
-未来将扩展对不同 Transcript 格式的识别。
+* [x] Transcript Parsing
+* [x] Speaker-aware Chunking
+* [x] Token-aware Chunking
+* [x] DeepSeek Tokenizer
+* [x] Context Budget Control
+* [x] Map Summarization
+* [x] Reduce Summarization
+* [x] Recursive Reduce
+* [x] Long Meeting End-to-End Pipeline
 
 ---
 
-### v0.2.2 — Speaker-aware Chunking ✅
+## v0.3 — Structured Output & Persistent Chat ✅
 
-在不拆断单条发言的前提下，将结构化会议记录划分为多个 Chunk。
+完成：
 
-已完成：
-
-* [x] 实现 `chunk_messages()`
-* [x] 保证单条 Speaker Message 尽量保持完整
-* [x] 避免 Message 在 Chunk 切换时丢失
-* [x] 处理最后一个未满 Chunk
-* [x] 实现 `format_chunk()`
-* [x] 将结构化 Message 恢复为会议文本
-
-流程：
-
-```text
-Structured Messages
-        ↓
-chunk_messages()
-        ↓
-List[List[Message]]
-        ↓
-format_chunk()
-        ↓
-Formatted Chunk Text
-```
-
-早期版本使用字符数作为 Chunk 大小依据。
-
-当前已在 v0.2.3 中升级为 Token-aware Chunking。
+* [x] JSON Structured Output
+* [x] Meeting Summary Schema
+* [x] Pydantic Validation
+* [x] Structured Retry
+* [x] `MeetingSummary`
+* [x] Message-based LLM Interface
+* [x] Chat History
+* [x] Conversation Session
+* [x] SQLite Persistence
+* [x] SQLAlchemy ORM
+* [x] Session Management
+* [x] Message Persistence
 
 ---
 
-### v0.2.3 — Token-aware Chunking ✅
+## v0.4 — Retrieval-Augmented Generation ✅
 
-将字符长度控制升级为基于 DeepSeek Tokenizer 的 Token 长度控制，并加入完整 Context Budget 管理。
+### M1 — Document Chunking ✅
 
-#### v0.2.3.1 — Token Counting ✅
+* [x] Sentence-aware splitting
+* [x] Token limit
+* [x] Chunk overlap
+* [x] Long sentence fallback
 
-已完成：
+### M2 — Embedding ✅
 
-* [x] 接入 DeepSeek V4 Tokenizer
-* [x] 使用官方 `tokenizer.json`
-* [x] 实现 `count_tokens()`
-* [x] 将 `max_char` 替换为 `max_tokens`
-* [x] 根据实际格式化后的 Message 计算 Token 数
-* [x] 保持原有 Speaker-aware Chunking 逻辑
+* [x] Multilingual SentenceTransformer
+* [x] Text Embedding
+* [x] Batch Chunk Embedding
+* [x] 384-dimensional vectors
 
-升级过程：
+### M3 — Vector Store ✅
 
-```text
-len(text)
-    ↓
-count_tokens(text)
-```
+* [x] Minimal NumPy Vector Store
+* [x] Chunk / Embedding Mapping
+* [x] Incremental Add
+* [x] Input Validation
 
-使 Chunk 大小与实际 LLM 上下文消耗更加一致。
+### M4 — Query Embedding ✅
+
+* [x] Query → Vector
+
+### M5 — Similarity Retrieval ✅
+
+* [x] Cosine Similarity
+* [x] NumPy Matrix Operations
+* [x] Top-K Retrieval
+* [x] Similarity Score Return
+
+### M6 — Context Construction ✅
+
+* [x] Retrieved Results → LLM Context
+
+### M7 — RAG Answering ✅
+
+* [x] Query
+* [x] Retrieval
+* [x] Context
+* [x] LLM Answer
+* [x] End-to-End RAG
+
+### M8 — Chat Integration ✅
+
+* [x] RAG integrated into Chat
+* [x] Session History
+* [x] Automatic RAG / Chat Routing
+* [x] Similarity Threshold
+* [x] Original User Message Persistence
+
+### M9 — Testing & Cleanup ✅
+
+Tested:
+
+* [x] Empty Vector Store
+* [x] `top_k > number of chunks`
+* [x] Chunk / Embedding Mismatch
+* [x] RAG Branch
+* [x] Normal Chat Branch
+* [x] Session History
+* [x] Real Meeting Transcript
+* [x] Retrieval Quality
+* [x] Routing Limitations
 
 ---
 
-#### v0.2.3.2 — Context Budget Control ✅
+# Future Work
 
-在 Chunk 大小之外，进一步考虑完整请求的上下文预算。
+## Multi-turn RAG Query Rewriting
 
-目标约束：
+当前 Retrieval 主要使用当前用户输入。
+
+例如：
 
 ```text
-input_tokens
+Previous:
+“K负责RAG模块。”
+
+Current:
+“那他什么时候完成？”
+```
+
+当前 Query：
+
+```text
+“那他什么时候完成？”
+```
+
+缺少上下文。
+
+未来可以结合 Chat History 改写为：
+
+```text
+“K负责的RAG模块什么时候完成？”
+```
+
+再进行 Retrieval。
+
+---
+
+## Contextual Retrieval
+
+未来可以让 Retrieval Query 同时考虑：
+
+```text
+Recent History
 +
-reserved_output_tokens
-+
-safety_margin
-<
-context_limit
+Current User Query
 ```
 
-已完成：
-
-* [x] 为模型输出预留 Token
-* [x] 计算 System Prompt Token 占用
-* [x] 计算 Chunk Prompt Token 占用
-* [x] 计算 Fixed Prompt Token 占用
-* [x] 计算可用于 Meeting Chunk 的 Token Budget
-* [x] 加入 Safety Margin
-* [x] 设置 Preferred Chunk Limit
-* [x] 计算 Effective Chunk Limit
-* [x] 将最终 Token Limit 接入 `chunk_messages()`
-
-当前流程：
-
-```text
-system_prompt_tokens
-+
-chunk_prompt_tokens
-        ↓
-fixed_prompt_tokens
-        ↓
-context_limit
-- fixed_prompt_tokens
-- reserved_output_tokens
-- safety_margin
-        ↓
-available_chunk_tokens
-        ↓
-min(
-    available_chunk_tokens,
-    preferred_chunk_limit
-)
-        ↓
-effective_chunk_limit
-        ↓
-chunk_messages()
-```
+提高多轮对话中的检索准确度。
 
 ---
 
-### v0.2.4 — Map-Reduce Meeting Summarization ✅
+## Better RAG Routing
 
-针对多个会议 Chunk 分阶段完成会议总结。
-
-#### Map ✅
-
-当前已完成基础版本：
-
-* [x] 实现 `summarize_chunk()`
-* [x] 实现 `summarize_chunks()`
-* [x] 为每个 Chunk 独立调用 LLM
-* [x] 使用独立 `system_prompt`
-* [x] 使用专用 `chunk_prompt`
-* [x] 将 Chunk Prompt 与当前会议片段组合为 User Prompt
-* [x] 保留关键事实、建议、决定和行动项
-* [x] 对 ASR 转写不确定信息增加约束
-* [x] 区分当前状态与真正的后续行动
-
-流程：
+当前使用：
 
 ```text
-chunk 1
+Top-1 Cosine Similarity
++
+Fixed Threshold
+```
+
+作为路由依据。
+
+未来可以尝试：
+
+* Retrieval Score + LLM Relevance Judge
+* Dedicated Router
+* Intent Classification
+* Answerability Classification
+* Confidence Calibration
+
+---
+
+## Better Retrieval
+
+未来可以加入：
+
+* Stronger Embedding Models
+* BGE
+* E5
+* Reranking
+* Cross Encoder
+* Hybrid Search
+* BM25
+* Metadata Filtering
+* MMR
+
+---
+
+## Persistent Vector Store
+
+目前程序启动时需要重新：
+
+```text
+Chunk
+→ Embed
+→ Build VectorStore
+```
+
+未来可以持久化：
+
+* Embeddings
+* Chunks
+* Metadata
+* Vector Index
+
+避免重复计算。
+
+---
+
+## Vector Database
+
+当前使用手写 NumPy Vector Store。
+
+未来可以尝试：
+
+* FAISS
+* Chroma
+* pgvector
+* Milvus
+
+---
+
+## FastAPI
+
+当前 `app.py` 是 CLI。
+
+未来可以提供：
+
+```text
+POST /summarize
+POST /chat
+GET /sessions
+DELETE /sessions/{id}
+```
+
+让 Meeting Agent 成为可调用的 Web Service。
+
+---
+
+## Agent Workflow
+
+v0.5 将开始探索：
+
+```text
+User Request
 ↓
-summary 1
-
-chunk 2
+Router
 ↓
-summary 2
-
-chunk 3
+Choose Capability
+├── Meeting Summarization
+├── RAG
+├── Normal Chat
+├── Fact Check
+├── Email Generation
+└── Tools
 ↓
-summary 3
+Execute
+↓
+Return Result
 ```
 
-单个 Chunk 的 Prompt 结构：
+未来也可以进一步研究：
 
-```text
-System:
-system_prompt
+* Agent Harness
+* Tool Selection
+* Verifier
+* Trajectory
+* Self-Evolution
+* Agent Evaluation
 
-User:
-chunk_prompt
-+
-chunk_text
-```
+---
 
-#### Reduce 
+# v0.5 — Agent Workflow
 
 计划：
 
-* [x] 实现 `merge_summaries()`
-* [x] 设计独立 `merge_prompt`
-* [x] 合并多个局部摘要
-* [x] 去除重复信息
-* [x] 保留跨 Chunk 的讨论关系
-* [x] 避免局部信息在合并过程中失真
-* [x] 重新应用用户最终 `user_instruction`
-* [x] 生成最终会议纪要
-
-完整目标流程：
-
-```text
-meeting.txt
-    ↓
-parse_transcript()
-    ↓
-messages
-    ↓
-prepare_chunk_budget()
-    ↓
-effective_chunk_limit
-    ↓
-chunk_messages()
-    ↓
-chunks
-    ↓
-summarize_chunks()
-    ↓
-partial summaries
-    ↓
-merge_summaries()
-    ↓
-final meeting summary
-```
-
----
-
-## v0.3 — Structured Output
-
-目标：让模型输出从自由文本升级为稳定的数据结构。
-
-计划：
-
-* [ ] JSON Structured Output
-* [ ] 定义 Meeting Summary Schema
-* [ ] 使用 Pydantic 进行数据验证
-* [ ] 结构化表示：
-
-  * Topics
-  * Decisions
-  * Action Items
-  * Participants
-  * Open Questions
-* [ ] 处理格式错误与模型输出异常
-* [ ] 为后续 RAG、Fact Check 和 Agent Workflow 提供稳定数据结构
-
-示例：
-
-```json
-{
-  "topics": [],
-  "decisions": [],
-  "action_items": [],
-  "open_questions": []
-}
-```
-
----
-
-## v0.4 — Retrieval-Augmented Generation (RAG)
-
-目标：让会议助手能够利用外部知识库与历史会议辅助理解当前会议内容。
-
-计划：
-
-* [ ] 学习 Embedding
-* [ ] 使用 NumPy 实现 Cosine Similarity
-* [ ] 实现 Top-K Retrieval
-* [ ] 构建最小可用 RAG Pipeline
-* [ ] 使用 FAISS 管理向量索引
-* [ ] 支持会议相关术语检索
-* [ ] 支持项目背景检索
-* [ ] 支持历史会议检索
-* [ ] 支持基于会议内容的问答
-
-流程：
-
-```text
-User Query / Meeting
-        ↓
-Embedding
-        ↓
-Vector Retrieval
-        ↓
-Relevant Context
-        ↓
-LLM
-```
-
----
-
-## v0.5 — Meeting Agent Workflow
-
-目标：从“会议总结工具”进一步发展为完整 Meeting Agent。
-
-计划加入：
-
-* [ ] Meeting Summary
-* [ ] Research Progress Extraction
-* [ ] Action Item Extraction
-* [ ] Meeting Email Generation
+* [ ] Capability Router
+* [ ] Tool Calling
+* [ ] Meeting Summarization Tool
+* [ ] RAG Tool
 * [ ] Fact Checking
-* [ ] Historical Meeting Retrieval
+* [ ] Email Generation
 * [ ] Multi-step Workflow
 * [ ] Error Handling
 * [ ] Logging
-* [ ] API Usage Statistics
-* [ ] Token Usage Statistics
-
-可能的完整流程：
-
-```text
-Transcript
-    ↓
-Parse
-    ↓
-Token Budget
-    ↓
-Chunk
-    ↓
-Summarize
-    ↓
-Merge
-    ↓
-Structured Output
-    ↓
-Fact Check
-    ↓
-Meeting Knowledge
-    ↓
-Email / Report / Query
-```
+* [ ] Evaluation
+* [ ] Agent Harness Exploration
 
 ---
 
-## Future
+# Learning Goals
 
-在完成底层实现并理解各模块原理之后，再考虑使用更高级的 LLM 应用框架：
+通过这个项目主要学习：
 
-* LangChain
-* LangGraph
-* Agent Frameworks
-
-本项目现阶段优先通过原生 Python 实现核心功能，以理解 LLM Application / Agent 各模块背后的工作原理，而不是直接依赖框架封装。
-
-## 学习目标
-
-通过这个项目，希望逐步掌握：
-
-* Python 项目结构
-* 虚拟环境与依赖管理
-* `.env` 与环境变量
-* LLM API 调用
+* Python Project Structure
+* Virtual Environment
+* Environment Variables
+* LLM API
 * Prompt Engineering
-* System Prompt 与 User Prompt
-* 模块化程序设计
-* 正则表达式基础
+* Message-based LLM Interface
 * Transcript Parsing
-* 长文本处理
+* Regular Expressions
 * Tokenizer
 * Token Counting
 * Context Window
 * Context Budget
+* Long Text Processing
 * Speaker-aware Chunking
-* Map-Reduce Summarization
+* Map-Reduce
 * Structured Output
+* JSON
 * Pydantic
+* SQLAlchemy
+* SQLite
+* Conversation Persistence
 * Embedding
-* 向量检索
-* Retrieval-Augmented Generation（RAG）
-* Fact Checking
-* LLM Agent
+* Vector Representation
+* Cosine Similarity
+* Top-K Retrieval
+* RAG
+* Routing
 * Agent Workflow
 
-项目早期会尽量避免直接使用高级框架封装核心流程，希望先理解这些技术底层到底是如何工作的。
+项目会继续优先理解底层机制，再逐步引入成熟框架。
 
-## License
+---
 
-本项目目前主要用于个人学习与实验。
+# Known Limitations
+
+当前版本主要是学习型实现，还有以下限制：
+
+* RAG Vector Store 仅存于内存
+* Embedding 每次启动需要重新计算
+* 固定 Similarity Threshold 路由不稳定
+* 当前 Embedding Model 的 Retrieval Quality 有限
+* 没有 Reranker
+* 没有 Hybrid Retrieval
+* 没有 Metadata Filtering
+* 多轮 RAG 尚未进行 Query Rewriting
+* Global Summary Query 不适合单纯依赖 Top-K RAG
+* 暂无 Web API
+* 暂无 UI
+* 暂无系统化 Evaluation Framework
+
+---
+
+# Why No LangChain?
+
+本项目现阶段刻意不依赖 LangChain / LangGraph 完成核心功能。
+
+原因不是这些框架不好，而是这个项目的主要目标之一是理解：
+
+```text
+LLM App / Agent Framework
+```
+
+内部到底在做什么。
+
+因此目前手动实现：
+
+```text
+Prompt
+Messages
+Token Budget
+Chunking
+Map-Reduce
+Structured Output
+Session
+Persistence
+Embedding
+Vector Store
+Similarity Search
+RAG
+Routing
+```
+
+等这些概念真正理解后，再使用更高级框架会更容易判断：
+
+* 框架替我做了什么
+* 哪些东西值得用框架
+* 哪些东西应该自己控制
+
+---
+
+# License
+
+本项目目前主要用于个人学习、实验与课程实践。

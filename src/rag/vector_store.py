@@ -23,6 +23,9 @@ class VectorStore:
     
     def search(self, query_vector: np.ndarray, top_k: int) -> list[tuple[str,float]]:
         
+        if self.embeddings is None or len(self.chunks) == 0:
+            return []
+        
         similarities = (np.dot(self.embeddings,query_vector) / 
                         (np.linalg.norm(query_vector) * np.linalg.norm(self.embeddings,axis=1))
                         )

@@ -2,3 +2,7 @@ openai
 python-dotenv
 transformers
 tokenizers
+numpy
+pydantic
+sqlalchemy
+sentence-transformers

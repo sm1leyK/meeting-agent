@@ -1,64 +1,58 @@
 from src import save_result,summarize_long_meeting,send_message,create_session
 from pathlib import Path
+
+
+
 from src.rag.chunking import split_document
-from src.core.token_utils import count_tokens
-
-def test_split_document():
-    text = (
-        "第一行内容。\n"
-        "第二行内容。\n"
-        "第三行内容。\n"
-        "第四行内容。\n"
-        "第五行内容。\n"
-    )
-
-    chunks = split_document(
-        text,
-        max_tokens=12,
-        overlap=4
-    )
-
-    print(f"chunk 数量: {len(chunks)}")
-    print()
-
-    for i, chunk in enumerate(chunks, start=1):
-        print(f"===== Chunk {i} =====")
-        print(chunk)
-        print(f"tokens: {count_tokens(chunk)}")
-        print()
-
-
-
-from src.rag.embedding import embed_chunks, embed_text
+from src.rag.embedding import embed_chunks
 from src.rag.vector_store import VectorStore
+from src.rag.rag import answer_with_rag
 
 
-def test_vector_search():
-    chunks = [
-        "K负责实现RAG模块，并在周五前完成。",
-        "会议决定下周进行数据库迁移。",
-        "大家讨论了国庆假期的旅行安排。",
-        "项目需要补充更多测试用例。"
-    ]
+def test_rag_end_to_end():
+    document = """
+项目组今天讨论了 RAG 模块的开发计划。
 
+K 负责实现向量检索模块，并在本周五前完成。
+
+数据库迁移计划安排在下周一进行。
+
+项目还需要补充更多测试用例。
+"""
+
+    # M1: chunking
+    chunks = split_document(
+        document,
+        max_tokens=20,
+        overlap=10
+    )
+
+    print("Chunks:")
+    for i, chunk in enumerate(chunks, start=1):
+        print(f"{i}. {chunk}")
+
+    # M2: embedding
     embeddings = embed_chunks(chunks)
 
+    # M3: vector store
     store = VectorStore()
     store.add(chunks, embeddings)
 
-    query = "什么时候进行数据库迁移？"
-    query_vector = embed_text(query)
+    # M4-M7: query -> retrieval -> context -> LLM
+    query = "K这周负责做什么？"
 
-    results = store.search(query_vector, top_k=2)
+    answer = answer_with_rag(
+        query=query,
+        store=store,
+        top_k=2
+    )
 
-    print("Query:")
+    print("\nQuestion:")
     print(query)
 
-    print("\nTop results:")
-    for i, result in enumerate(results, start=1):
-        print(f"{i}. {result}")
+    print("\nAnswer:")
+    print(answer)
 
 
 if __name__ == "__main__":
-    test_vector_search()
-
+    test_rag_end_to_end()

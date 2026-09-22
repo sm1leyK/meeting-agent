@@ -266,14 +266,14 @@ Speaker(00:00:00): Content
 例如：
 
 ```text
-陈杰(00:03:01): Yeah, the grant.
+Mason(00:03:01): Yeah, the grant.
 ```
 
 转换为：
 
 ```python
 {
-    "speaker": "陈杰",
+    "speaker": "Mason",
     "timestamp": "00:03:01",
     "content": "Yeah, the grant."
 }

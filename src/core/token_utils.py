@@ -40,6 +40,3 @@ def calculate_token_budget(
                 raise ValueError('当前 Prompt + 输出预算已经超过模型上下文限制')
         effective_chunk_limit = min(available_chunk_tokens,preferred_limit)
         return effective_chunk_limit
-
-chunks = split_by_tokens('hello, my name is sm1leyK.',4)
-print(chunks)

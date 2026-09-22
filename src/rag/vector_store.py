@@ -21,12 +21,15 @@ class VectorStore:
     def get_all(self) -> tuple[list[str],np.ndarray | None]:
         return (self.chunks,self.embeddings)
     
-    def search(self, query_vector: np.ndarray, top_k: int) -> list[str]:
+    def search(self, query_vector: np.ndarray, top_k: int) -> list[tuple[str,float]]:
         
         similarities = (np.dot(self.embeddings,query_vector) / 
                         (np.linalg.norm(query_vector) * np.linalg.norm(self.embeddings,axis=1))
                         )
         indices = np.argsort(similarities)[::-1][:top_k]
-        return [self.chunks[i] for i in indices]
-
+        
+        return [
+            (self.chunks[i], float(similarities[i]))
+            for i in indices
+        ]
         

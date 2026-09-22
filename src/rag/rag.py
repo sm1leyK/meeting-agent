@@ -31,6 +31,14 @@ Question:
     result = call_llm(messages=messages)
     return result
     
+def should_use_rag(
+    best_score,
+    threshold: float=0.25
+) -> bool:
     
+    if best_score > threshold:
+        return True
+    
+    return False
 
     

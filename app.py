@@ -3,56 +3,48 @@ from pathlib import Path
 
 
 
-from src.rag.chunking import split_document
 from src.rag.embedding import embed_chunks
 from src.rag.vector_store import VectorStore
-from src.rag.rag import answer_with_rag
+from src.chat.chat import send_message
+from src.chat.storage import create_session
 
 
-def test_rag_end_to_end():
-    document = """
-项目组今天讨论了 RAG 模块的开发计划。
+def test_chat_rag_router():
+    chunks = [
+        "K负责实现RAG模块，并在本周五前完成。",
+        "数据库迁移计划安排在下周一进行。",
+        "项目还需要补充更多测试用例。"
+    ]
 
-K 负责实现向量检索模块，并在本周五前完成。
-
-数据库迁移计划安排在下周一进行。
-
-项目还需要补充更多测试用例。
-"""
-
-    # M1: chunking
-    chunks = split_document(
-        document,
-        max_tokens=20,
-        overlap=10
-    )
-
-    print("Chunks:")
-    for i, chunk in enumerate(chunks, start=1):
-        print(f"{i}. {chunk}")
-
-    # M2: embedding
     embeddings = embed_chunks(chunks)
 
-    # M3: vector store
     store = VectorStore()
     store.add(chunks, embeddings)
 
-    # M4-M7: query -> retrieval -> context -> LLM
-    query = "K这周负责做什么？"
+    session_id = create_session("RAG Router Test")
 
-    answer = answer_with_rag(
-        query=query,
-        store=store,
-        top_k=2
-    )
+    system_prompt = "你是一个有帮助的聊天助手。"
 
-    print("\nQuestion:")
-    print(query)
+    queries = [
+        "K这周负责什么？",
+        "什么是决策树？"
+    ]
 
-    print("\nAnswer:")
-    print(answer)
+    for query in queries:
+        print("=" * 50)
+        print("User:", query)
+
+        answer = send_message(
+            system_prompt=system_prompt,
+            session_id=session_id,
+            user_input=query,
+            store=store,
+            top_k=2,
+            threshold=0.25
+        )
+
+        print("Assistant:", answer)
 
 
 if __name__ == "__main__":
-    test_rag_end_to_end()
+    test_chat_rag_router()
